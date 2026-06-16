@@ -55,7 +55,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function DataEntryPanel({ tasks, onChanged }) {
+export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
   const [modal, setModal] = useState("");
   const [forms, setForms] = useState(defaultForms);
   const [busy, setBusy] = useState(false);
@@ -118,7 +118,7 @@ export default function DataEntryPanel({ tasks, onChanged }) {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-4">
-        {(tasks || []).slice(0, 4).map((task) => (
+        {(limit ? (tasks || []).slice(0, limit) : tasks || []).map((task) => (
           <div key={task.id} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>

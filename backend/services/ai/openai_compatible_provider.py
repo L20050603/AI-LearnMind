@@ -110,21 +110,33 @@ class OpenAICompatibleProvider(AIProvider):
         return extract_json_object(text, {"answer": text, "rootCause": reason, "repairPlan": [], "suggestedQuestions": []})
 
     def generate_quiz(self, topic: str, context: dict, count: int = 5) -> list[dict]:
+        level = context.get("selected_level") or {}
+        risk = context.get("risk") or {}
+        source = (context.get("sources") or [{}])[0]
+        compact_context = (
+            f"知识点：{topic}\n"
+            f"掌握度：{level.get('mastery', '未知')}%\n"
+            f"风险等级：{risk.get('risk_level', '未知')}\n"
+            f"参考资料：{source.get('title', '本地课程资料')} - {source.get('summary') or source.get('snippet') or ''}"
+        )
         text = self.chat(
             [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": "你是大学课程出题助手。只输出 JSON 数组，不要输出解释性前后缀。"},
                 {
                     "role": "user",
                     "content": (
-                        f"Generate {count} quiz questions for {topic}.\n{context_block(context)}\n"
-                        "Return JSON array. Each item needs id, type, question, options, answer, explanation."
+                        f"请基于以下信息生成 {count} 道中文小测题：\n{compact_context}\n"
+                        "要求：题目覆盖概念辨析、过程模拟、易错点。"
+                        "输出格式必须是 JSON 数组，每项包含 id,type,question,options,answer,explanation。"
                     ),
                 },
             ],
             self.temperature,
         )
         data = extract_json_object(text, [])
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list) or not data:
+            raise RuntimeError("LLM quiz response was not a valid non-empty JSON array")
+        return data
 
     def summarize_resource(self, title: str, content: str, context: dict) -> dict:
         text = self.chat(

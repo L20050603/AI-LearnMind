@@ -1,10 +1,11 @@
 import AgentPanel from "../components/AgentPanel.jsx";
 import LevelActionBar from "../components/LevelActionBar.jsx";
+import KnowledgePointSelect from "../components/common/KnowledgePointSelect.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 export default function TutorPage() {
-  const { dashboard, agentRun, selectedLevel } = useAppData();
+  const { dashboard, agentRun, selectedLevel, setSelectedLevel, learningMap } = useAppData();
   const followUps = [
     `请讲解 ${selectedLevel?.title || "页面置换算法 Boss"}`,
     "给我一个三步复习计划",
@@ -17,6 +18,11 @@ export default function TutorPage() {
         <AgentPanel agentMessages={dashboard?.agentMessages} initialRun={agentRun} />
         <div className="space-y-4">
           <div className="glass-panel p-5">
+            <KnowledgePointSelect
+              value={selectedLevel?.id}
+              onChange={(id) => setSelectedLevel(learningMap.find((node) => node.id === id))}
+              label="讲解知识点"
+            />
             <p className="text-xs uppercase text-cyan-200/60">Selected Level</p>
             <h2 className="mt-1 text-xl font-bold text-white">{selectedLevel?.title}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy}</p>

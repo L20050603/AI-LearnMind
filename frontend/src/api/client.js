@@ -21,6 +21,7 @@ export const getReportMarkdown = () => api.get("/api/reports/export-md").then((r
 export const getTasks = () => api.get("/api/tasks").then((res) => res.data);
 export const createTask = (payload) => api.post("/api/tasks", payload).then((res) => res.data);
 export const updateTask = (id, payload) => api.patch(`/api/tasks/${id}`, payload).then((res) => res.data);
+export const completeTask = (id) => api.patch(`/api/tasks/${id}/complete`).then((res) => res.data);
 export const deleteTask = (id) => api.delete(`/api/tasks/${id}`).then((res) => res.data);
 
 export const getStudyRecords = () => api.get("/api/study-records").then((res) => res.data);
@@ -31,6 +32,10 @@ export const createEmotionCheckin = (payload) => api.post("/api/emotion-checkins
 
 export const getWrongQuestions = () => api.get("/api/wrong-questions").then((res) => res.data);
 export const createWrongQuestion = (payload) => api.post("/api/wrong-questions", payload).then((res) => res.data);
+export const fixWrongQuestion = (id) => api.patch(`/api/wrong-questions/${id}/fix`).then((res) => res.data);
 
 export const getCurrentRisk = () => api.get("/api/risk/current").then((res) => res.data);
 export const evaluateRisk = (payload = {}) => api.post("/api/risk/evaluate", payload).then((res) => res.data);
+export const completeLevel = (id, payload) => api.post(`/api/levels/${id}/complete`, payload).then((res) => res.data);
+export const logInteraction = (payload) => api.post("/api/interactions/events", payload).then((res) => res.data);
+export const getInteractions = () => api.get("/api/interactions/events").then((res) => res.data);

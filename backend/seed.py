@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from database import SessionLocal, init_db
-from models import EmotionCheckin, KnowledgePoint, LearningTask, StudyRecord, User, WrongQuestion, utc_now
+from models import EmotionCheckin, InteractionEvent, KnowledgePoint, LearningTask, StudyRecord, User, WrongQuestion, utc_now
 from services.emotion_service import analyze_emotion
 
 
@@ -10,7 +10,7 @@ def seed_database(reset: bool = False):
     db = SessionLocal()
     try:
         if reset:
-            for model in [WrongQuestion, EmotionCheckin, StudyRecord, LearningTask, KnowledgePoint, User]:
+            for model in [InteractionEvent, WrongQuestion, EmotionCheckin, StudyRecord, LearningTask, KnowledgePoint, User]:
                 db.query(model).delete()
             db.commit()
 

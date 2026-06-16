@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -132,6 +134,8 @@ class EmotionCheckinResponse(BaseModel):
     text: str
     stress_score: int
     stress_level: str
+    matched_words: list[dict] = Field(default_factory=list)
+    risk: dict | None = None
 
     model_config = {"from_attributes": True}
 
@@ -149,6 +153,7 @@ class WrongQuestionResponse(BaseModel):
     question: str
     reason: str
     fixed: bool
+    fixed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -178,3 +183,42 @@ class RiskResponse(BaseModel):
     suggestions: list[str]
     triggered_rules: list[str]
     metrics: RiskMetrics
+
+
+class LevelCompleteRequest(BaseModel):
+    study_minutes: int = Field(default=30, ge=1)
+    correct_count: int = Field(default=5, ge=0)
+    wrong_count: int = Field(default=1, ge=0)
+    source: str = "manual_complete"
+
+
+class LevelCompleteResponse(BaseModel):
+    success: bool
+    levelId: int
+    newMastery: int
+    xpGained: int
+    unlockedLevels: list[int]
+    message: str
+    level: dict
+
+
+class InteractionEventCreate(BaseModel):
+    type: str
+    name: str = ""
+    action: str = ""
+    page: str = ""
+    target_id: int | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+class InteractionEventResponse(BaseModel):
+    id: int
+    user_id: int
+    type: str
+    name: str
+    action: str
+    page: str
+    target_id: int | None
+    metadata_json: str
+
+    model_config = {"from_attributes": True}

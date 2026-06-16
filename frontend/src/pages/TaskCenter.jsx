@@ -5,7 +5,7 @@ import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 export default function TaskCenter() {
-  const { tasks, refreshAll } = useAppData();
+  const { tasks, wrongQuestions, refreshAll } = useAppData();
   const [filter, setFilter] = useState("all");
 
   const filteredTasks = useMemo(() => {
@@ -33,7 +33,7 @@ export default function TaskCenter() {
             </button>
           ))}
         </div>
-        <DataEntryPanel tasks={filteredTasks} onChanged={() => refreshAll()} limit={0} />
+        <DataEntryPanel tasks={filteredTasks} wrongQuestions={wrongQuestions} onChanged={() => refreshAll()} limit={0} />
       </div>
     </PageContainer>
   );

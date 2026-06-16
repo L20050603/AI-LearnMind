@@ -3,13 +3,18 @@ import { motion } from "framer-motion";
 import { BookOpenCheck, CheckCircle2, ClipboardPlus, HeartPulse, Plus, Trash2, X } from "lucide-react";
 
 import {
+  completeTask as completeTaskApi,
   createEmotionCheckin,
   createStudyRecord,
   createTask,
   createWrongQuestion,
   deleteTask,
-  updateTask,
+  fixWrongQuestion,
 } from "../api/client.js";
+import ConfirmDialog from "./common/ConfirmDialog.jsx";
+import KnowledgePointSelect from "./common/KnowledgePointSelect.jsx";
+import LoadingOverlay from "./common/LoadingOverlay.jsx";
+import { useToast } from "./common/ToastProvider.jsx";
 
 const defaultForms = {
   task: { title: "", knowledge_point_id: 6, difficulty: "normal", estimated_minutes: 30, due_date: "" },
@@ -31,12 +36,7 @@ function Modal({ title, children, onClose }) {
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-cyan-200/30 hover:bg-white/10"
-            title="关闭"
-          >
+          <button type="button" onClick={onClose} className="icon-action" title="关闭">
             <X size={20} />
           </button>
         </div>
@@ -55,10 +55,13 @@ function Field({ label, children }) {
   );
 }
 
-export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
+export default function DataEntryPanel({ tasks = [], wrongQuestions = [], onChanged, limit = 4 }) {
   const [modal, setModal] = useState("");
   const [forms, setForms] = useState(defaultForms);
   const [busy, setBusy] = useState(false);
+  const [confirmTask, setConfirmTask] = useState(null);
+  const [emotionResult, setEmotionResult] = useState(null);
+  const { showToast } = useToast();
 
   const setFormValue = (form, key, value) => {
     setForms((current) => ({ ...current, [form]: { ...current[form], [key]: value } }));
@@ -67,31 +70,82 @@ export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
   async function submit(handler, payload) {
     setBusy(true);
     try {
-      await handler(payload);
+      const result = await handler(payload);
       setModal("");
       setForms(defaultForms);
-      await onChanged();
+      if (handler === createEmotionCheckin) {
+        setEmotionResult(result);
+        showToast(`情绪分析完成：压力 ${result.stress_score}，等级 ${result.stress_level}`, result.stress_level === "高" ? "error" : "info");
+      } else {
+        showToast("操作已保存，数据已刷新。", "success");
+      }
+      await onChanged?.();
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "操作失败，请检查后端服务。", "error");
     } finally {
       setBusy(false);
     }
   }
 
   async function completeTask(task) {
-    await updateTask(task.id, { completed: !task.completed });
-    await onChanged();
+    setBusy(true);
+    try {
+      if (task.completed) {
+        showToast("该任务已经完成。", "info");
+        return;
+      }
+      await completeTaskApi(task.id);
+      showToast("任务已完成，并已同步生成学习记录、刷新风险和掌握度。", "success");
+      await onChanged?.();
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "完成任务失败。", "error");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function removeTask(task) {
-    await deleteTask(task.id);
-    await onChanged();
+  async function confirmRemoveTask() {
+    if (!confirmTask) return;
+    setBusy(true);
+    try {
+      await deleteTask(confirmTask.id);
+      showToast("任务已删除。", "success");
+      setConfirmTask(null);
+      await onChanged?.();
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "删除任务失败。", "error");
+    } finally {
+      setBusy(false);
+    }
   }
+
+  async function fixWrong(item) {
+    setBusy(true);
+    try {
+      const result = await fixWrongQuestion(item.id);
+      showToast(`错题已标记掌握，当前掌握度 ${result.mastery}%。`, "success");
+      await onChanged?.();
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "修复错题失败。", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const visibleTasks = limit ? tasks.slice(0, limit) : tasks;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-panel p-4"
-    >
+    <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
+      <LoadingOverlay show={busy} text="正在同步学习数据..." />
+      <ConfirmDialog
+        open={!!confirmTask}
+        title="确认删除任务？"
+        description={`删除后不会影响已有学习记录。任务：${confirmTask?.title || ""}`}
+        confirmText="删除"
+        onConfirm={confirmRemoveTask}
+        onCancel={() => setConfirmTask(null)}
+      />
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase text-cyan-200/60">Real Data Loop</p>
@@ -117,30 +171,70 @@ export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
         </div>
       </div>
 
+      {emotionResult && (
+        <div className="mb-4 rounded-3xl border border-fuchsia-200/20 bg-fuchsia-400/10 p-4 text-sm text-slate-200">
+          情绪分析：压力分 {emotionResult.stress_score}，等级 {emotionResult.stress_level}
+          {!!emotionResult.matched_words?.length && (
+            <span className="ml-2 text-fuchsia-100">
+              命中：{emotionResult.matched_words.map((item) => `${item.category}:${item.words.join("、")}`).join("；")}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid gap-3 lg:grid-cols-4">
-        {(limit ? (tasks || []).slice(0, limit) : tasks || []).map((task) => (
+        {visibleTasks.map((task) => (
           <div key={task.id} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs text-cyan-100/70">知识点 #{task.knowledge_point_id} · {task.difficulty}</p>
+                <p className="text-xs text-cyan-100/70">
+                  知识点 #{task.knowledge_point_id} · {task.difficulty}
+                </p>
                 <h3 className="mt-1 text-sm font-semibold leading-5 text-white">{task.title}</h3>
               </div>
               <span className={`rounded-full px-2 py-1 text-[11px] ${task.completed ? "bg-emerald-400/15 text-emerald-200" : "bg-violet-400/15 text-violet-200"}`}>
                 {task.completed ? "已完成" : "进行中"}
               </span>
             </div>
-            <p className="text-xs text-slate-400">预计 {task.estimated_minutes} min {task.due_date ? `· ${task.due_date}` : ""}</p>
+            <p className="text-xs text-slate-400">
+              预计 {task.estimated_minutes} min {task.due_date ? `· ${task.due_date}` : ""}
+            </p>
             <div className="mt-4 flex gap-2">
               <button onClick={() => completeTask(task)} className="icon-action" type="button" title="完成任务">
                 <CheckCircle2 size={16} />
               </button>
-              <button onClick={() => removeTask(task)} className="icon-action text-rose-200" type="button" title="删除任务">
+              <button onClick={() => setConfirmTask(task)} className="icon-action text-rose-200" type="button" title="删除任务">
                 <Trash2 size={16} />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {!!wrongQuestions.length && (
+        <div className="mt-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4">
+          <div className="mb-3 flex items-center gap-2 text-rose-100">
+            <ClipboardPlus size={17} />
+            错题修复
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {wrongQuestions.slice(0, 6).map((item) => (
+              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-cyan-100/70">知识点 #{item.knowledge_point_id}</p>
+                    <h3 className="mt-1 text-sm font-semibold leading-6 text-white">{item.question}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.reason}</p>
+                  </div>
+                  <button type="button" onClick={() => fixWrong(item)} disabled={item.fixed} className="action-button shrink-0 disabled:opacity-50">
+                    {item.fixed ? "已掌握" : "标记已掌握"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {modal === "task" && (
         <Modal title="新增学习任务" onClose={() => setModal("")}>
@@ -159,9 +253,7 @@ export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
               <input className={inputClass} value={forms.task.title} onChange={(e) => setFormValue("task", "title", e.target.value)} required />
             </Field>
             <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="知识点 ID">
-                <input className={inputClass} type="number" min="1" max="8" value={forms.task.knowledge_point_id} onChange={(e) => setFormValue("task", "knowledge_point_id", e.target.value)} />
-              </Field>
+              <KnowledgePointSelect value={forms.task.knowledge_point_id} onChange={(value) => setFormValue("task", "knowledge_point_id", value)} />
               <Field label="难度">
                 <select className={inputClass} value={forms.task.difficulty} onChange={(e) => setFormValue("task", "difficulty", e.target.value)}>
                   <option>normal</option>
@@ -198,9 +290,7 @@ export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
             }}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="知识点 ID">
-                <input className={inputClass} type="number" min="1" max="8" value={forms.record.knowledge_point_id} onChange={(e) => setFormValue("record", "knowledge_point_id", e.target.value)} />
-              </Field>
+              <KnowledgePointSelect value={forms.record.knowledge_point_id} onChange={(value) => setFormValue("record", "knowledge_point_id", value)} />
               <Field label="学习分钟">
                 <input className={inputClass} type="number" min="1" value={forms.record.study_minutes} onChange={(e) => setFormValue("record", "study_minutes", e.target.value)} />
               </Field>
@@ -252,9 +342,7 @@ export default function DataEntryPanel({ tasks, onChanged, limit = 4 }) {
               submit(createWrongQuestion, { ...forms.wrong, knowledge_point_id: Number(forms.wrong.knowledge_point_id) });
             }}
           >
-            <Field label="知识点 ID">
-              <input className={inputClass} type="number" min="1" max="8" value={forms.wrong.knowledge_point_id} onChange={(e) => setFormValue("wrong", "knowledge_point_id", e.target.value)} />
-            </Field>
+            <KnowledgePointSelect value={forms.wrong.knowledge_point_id} onChange={(value) => setFormValue("wrong", "knowledge_point_id", value)} />
             <Field label="题目">
               <textarea className={inputClass} rows="3" value={forms.wrong.question} onChange={(e) => setFormValue("wrong", "question", e.target.value)} required />
             </Field>

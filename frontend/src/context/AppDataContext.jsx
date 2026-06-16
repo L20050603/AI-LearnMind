@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import {
-  getAgentsRun,
   getCharts,
   getCurrentRisk,
   getDashboard,
@@ -9,6 +8,7 @@ import {
   getLearningMap,
   getTasks,
   getTodayLearningPath,
+  getWrongQuestions,
 } from "../api/client.js";
 
 const AppDataContext = createContext(null);
@@ -19,6 +19,7 @@ export function AppDataProvider({ children }) {
   const [charts, setCharts] = useState(null);
   const [risk, setRisk] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [wrongQuestions, setWrongQuestions] = useState([]);
   const [knowledgeGraph, setKnowledgeGraph] = useState(null);
   const [todayPath, setTodayPath] = useState(null);
   const [agentRun, setAgentRun] = useState(null);
@@ -29,24 +30,24 @@ export function AppDataProvider({ children }) {
   const refreshAll = useCallback(async ({ showLoading = false } = {}) => {
     try {
       if (showLoading) setLoading(true);
-      const [dashboardData, mapData, chartData, taskData, riskData, graphData, pathData, agentData] = await Promise.all([
+      const [dashboardData, mapData, chartData, taskData, wrongData, riskData, graphData, pathData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
         getCharts(),
         getTasks(),
+        getWrongQuestions(),
         getCurrentRisk(),
         getKnowledgeGraph(),
         getTodayLearningPath(),
-        getAgentsRun(),
       ]);
       setDashboard(dashboardData);
       setLearningMap(mapData);
       setCharts(chartData);
       setTasks(taskData);
+      setWrongQuestions(wrongData);
       setRisk(riskData);
       setKnowledgeGraph(graphData);
       setTodayPath(pathData);
-      setAgentRun(agentData);
       setSelectedLevel((current) => {
         if (current) return mapData.find((node) => node.id === current.id) || current;
         return mapData.find((node) => node.id === pathData?.recommended?.id) || mapData.find((node) => node.status === "boss") || mapData[0] || null;
@@ -70,6 +71,7 @@ export function AppDataProvider({ children }) {
       charts,
       risk,
       tasks,
+      wrongQuestions,
       knowledgeGraph,
       todayPath,
       agentRun,
@@ -80,7 +82,7 @@ export function AppDataProvider({ children }) {
       error,
       refreshAll,
     }),
-    [agentRun, charts, dashboard, error, knowledgeGraph, learningMap, loading, refreshAll, risk, selectedLevel, tasks, todayPath],
+    [agentRun, charts, dashboard, error, knowledgeGraph, learningMap, loading, refreshAll, risk, selectedLevel, tasks, todayPath, wrongQuestions],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

@@ -8,15 +8,34 @@ import { useAppData } from "../context/AppDataContext.jsx";
 export default function AgentBoard() {
   const { agentRun, setAgentRun } = useAppData();
   const [running, setRunning] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(agentRun?.blackboard?.length || 0);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const entries = agentRun?.blackboard || [];
   const finalAdvice = agentRun?.final_advice;
 
   async function runAgents() {
     setRunning(true);
+    setVisibleCount(0);
+    setActiveIndex(0);
     try {
-      setAgentRun(await getAgentsRun());
+      const data = await getAgentsRun();
+      setAgentRun(data);
+      data.blackboard.forEach((_, index) => {
+        window.setTimeout(() => {
+          setActiveIndex(index);
+          setVisibleCount(index + 1);
+          if (index === data.blackboard.length - 1) {
+            window.setTimeout(() => {
+              setRunning(false);
+              setActiveIndex(-1);
+            }, 360);
+          }
+        }, index * 520);
+      });
     } finally {
-      setRunning(false);
+      if (!entries.length) {
+        window.setTimeout(() => setRunning(false), 3600);
+      }
     }
   }
 
@@ -32,6 +51,18 @@ export default function AgentBoard() {
           运行 Agent
         </button>
       </div>
+
+      {running && (
+        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {["Profile Agent", "Diagnosis Agent", "Planner Agent", "Emotion Agent", "Intervention Agent", "Report Agent"].map((name, index) => (
+            <div key={name} className={`rounded-2xl border p-3 text-sm ${index === activeIndex ? "border-cyan-200/40 bg-cyan-400/12 text-cyan-50" : index < visibleCount ? "border-emerald-200/25 bg-emerald-400/10 text-emerald-100" : "border-white/10 bg-white/[0.035] text-slate-400"}`}>
+              <Loader2 className={index === activeIndex ? "mb-2 animate-spin" : "mb-2 opacity-50"} size={16} />
+              {name}
+              <p className="mt-1 text-xs">{index < visibleCount ? "完成" : index === activeIndex ? "正在分析..." : "等待中"}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {finalAdvice && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel border-fuchsia-300/20 p-5">
@@ -54,7 +85,7 @@ export default function AgentBoard() {
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {entries.map((entry, index) => (
+        {entries.slice(0, visibleCount || entries.length).map((entry, index) => (
           <motion.div
             key={`${entry.agent_name}-${entry.id}`}
             initial={{ opacity: 0, y: 16 }}

@@ -83,6 +83,7 @@ class WrongQuestion(Base):
     question = Column(Text, nullable=False)
     reason = Column(Text, default="")
     fixed = Column(Boolean, default=False)
+    fixed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
 
@@ -95,4 +96,18 @@ class RiskReport(Base):
     pressure_risk = Column(Integer, default=0)
     comprehensive_risk = Column(Integer, default=0)
     explanation = Column(Text, default="")
+    created_at = Column(DateTime, default=utc_now)
+
+
+class InteractionEvent(Base):
+    __tablename__ = "interaction_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
+    type = Column(String, index=True, nullable=False)
+    name = Column(String, default="")
+    action = Column(String, default="")
+    page = Column(String, default="")
+    target_id = Column(Integer, nullable=True)
+    metadata_json = Column(Text, default="{}")
     created_at = Column(DateTime, default=utc_now)

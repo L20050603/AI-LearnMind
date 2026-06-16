@@ -48,10 +48,27 @@ class LearningNode(BaseModel):
 
 class ChatRequest(BaseModel):
     question: str
+    history: list[dict] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):
     reply: str
+    sources: list[dict] = Field(default_factory=list)
+    mode: str = "local"
+
+
+class TutorExplainRequest(BaseModel):
+    topic: str
+    question: str = ""
+
+
+class TutorExplainResponse(BaseModel):
+    topic: str
+    explanation: str
+    steps: list[str]
+    examples: list[str]
+    related_points: list[str]
+    sources: list[dict] = Field(default_factory=list)
 
 
 class TaskCreate(BaseModel):

@@ -13,7 +13,10 @@ export const getAgentsRun = () => api.get("/api/agents/run").then((res) => res.d
 export const getAgentsBlackboard = () => api.get("/api/agents/blackboard").then((res) => res.data);
 export const getAgentsFinalAdvice = () => api.get("/api/agents/final-advice").then((res) => res.data);
 export const getCharts = () => api.get("/api/charts").then((res) => res.data);
-export const sendChat = (question) => api.post("/api/chat", { question }).then((res) => res.data);
+export const sendChat = (question, history = []) => api.post("/api/chat", { question, history }).then((res) => res.data);
+export const explainTopic = (topic, question = "") => api.post("/api/tutor/explain", { topic, question }).then((res) => res.data);
+export const getWeeklyReport = () => api.get("/api/reports/weekly").then((res) => res.data);
+export const getReportMarkdown = () => api.get("/api/reports/export-md").then((res) => res.data);
 
 export const getTasks = () => api.get("/api/tasks").then((res) => res.data);
 export const createTask = (payload) => api.post("/api/tasks", payload).then((res) => res.data);

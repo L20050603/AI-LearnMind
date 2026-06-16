@@ -91,6 +91,16 @@ priority = exam_weight * 0.35
   - `GET /api/agents/final-advice`
 - 前端 AI 导师面板升级为多 Agent 协同面板，支持依次分析动画、黑板证据展示和最终建议卡片。
 
+### 第六阶段：AI 导师、课程资料检索与学习报告
+
+- `/api/chat` 支持连续对话历史；配置 `OPENAI_API_KEY` 或 `LLM_API_KEY` 时尝试调用真实 LLM，否则使用本地课程资料检索和模板回复。
+- 新增 `services/course_materials.json`，以本地 JSON 课程资料支撑关键词检索。
+- 新增 `retrieval_service.py`、`tutor_service.py`、`report_service.py`。
+- 新增 `POST /api/tutor/explain`，可针对某个知识点生成讲解、步骤、例子和相关资料来源。
+- 新增 `GET /api/reports/weekly` 和 `GET /api/reports/export-md`，生成周报 JSON 和 Markdown。
+- 周报包含本周学习总时长、任务完成率、知识掌握变化、薄弱知识点、情绪压力变化、风险原因、下周建议和 Agent 综合总结。
+- 前端 AI 导师支持连续对话、知识点讲解、一键生成周报和复制 Markdown。
+
 ## 主要接口
 
 - `GET /api/dashboard`
@@ -109,3 +119,6 @@ priority = exam_weight * 0.35
 - `GET /api/agents/run`
 - `GET /api/agents/blackboard`
 - `GET /api/agents/final-advice`
+- `POST /api/tutor/explain`
+- `GET /api/reports/weekly`
+- `GET /api/reports/export-md`

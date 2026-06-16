@@ -41,6 +41,28 @@ http://localhost:5173
 - 右侧多 Agent AI 导师面板，支持模拟问答和逐字输出效果。
 - 底部 ECharts 图表展示学习趋势、知识掌握和情绪压力变化。
 
+## 第二阶段功能
+
+- 后端接入 SQLAlchemy + SQLite，数据保存在 `backend/learnmind.db`。
+- 新增真实数据模型：User、LearningTask、StudyRecord、EmotionCheckin、WrongQuestion、KnowledgePoint、RiskReport。
+- 新增 CRUD 接口：
+  - `GET/POST /api/tasks`
+  - `PATCH/DELETE /api/tasks/{id}`
+  - `GET/POST /api/study-records`
+  - `GET/POST /api/emotion-checkins`
+  - `GET/POST /api/wrong-questions`
+- Dashboard 统计改为从数据库计算：今日任务完成率、本周学习时长、错题数量、连续学习天数。
+- 学习闯关地图会根据学习记录、任务完成情况和错题数动态计算掌握度与解锁状态。
+- 前端新增学习数据闭环控制台，可新增任务、完成任务、添加学习记录、情绪打卡和错题记录。
+
+## 初始化示例数据
+
+```bash
+cd backend
+venv\Scripts\activate
+python seed.py
+```
+
 ## 第二阶段扩展建议
 
 - 接入真实用户登录和 SQLite 数据持久化。

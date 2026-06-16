@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Activity, AlertTriangle, Flame, Gauge, Sparkles, Zap } from "lucide-react";
+import { Activity, AlertTriangle, BookX, Clock3, Flame, Gauge, Sparkles, Zap } from "lucide-react";
 
 const items = [
   {
@@ -10,25 +10,18 @@ const items = [
     color: "from-cyan-300 to-emerald-300",
   },
   {
-    key: "efficiencyScore",
-    label: "学习效率评分",
-    suffix: "",
-    icon: Zap,
-    color: "from-blue-300 to-violet-300",
+    key: "weeklyStudyMinutes",
+    label: "本周学习时长",
+    suffix: " min",
+    icon: Clock3,
+    color: "from-sky-300 to-blue-300",
   },
   {
-    key: "learningRisk",
-    label: "当前学习风险",
-    suffix: "%",
-    icon: AlertTriangle,
-    color: "from-amber-300 to-rose-300",
-  },
-  {
-    key: "stressLevel",
-    label: "当前压力等级",
-    suffix: "",
-    icon: Gauge,
-    color: "from-fuchsia-300 to-cyan-300",
+    key: "wrongQuestionCount",
+    label: "未解决错题数量",
+    suffix: " 道",
+    icon: BookX,
+    color: "from-rose-300 to-amber-300",
   },
   {
     key: "streakDays",
@@ -38,8 +31,29 @@ const items = [
     color: "from-orange-300 to-rose-300",
   },
   {
+    key: "efficiencyScore",
+    label: "学习效率评分",
+    suffix: "",
+    icon: Zap,
+    color: "from-blue-300 to-violet-300",
+  },
+  {
+    key: "learningRisk",
+    label: "学习风险指数",
+    suffix: "%",
+    icon: AlertTriangle,
+    color: "from-amber-300 to-rose-300",
+  },
+  {
+    key: "stressLevel",
+    label: "压力等级",
+    suffix: "",
+    icon: Gauge,
+    color: "from-fuchsia-300 to-cyan-300",
+  },
+  {
     key: "todayXp",
-    label: "今日获得 XP",
+    label: "今日 XP",
     suffix: " XP",
     icon: Sparkles,
     color: "from-emerald-300 to-cyan-300",
@@ -47,9 +61,11 @@ const items = [
 ];
 
 function progressValue(key, value) {
-  if (key === "stressLevel") return 62;
-  if (key === "todayXp") return Math.min(100, Math.round((value / 220) * 100));
+  if (key === "stressLevel") return value === "高" ? 86 : value === "低" ? 34 : 62;
+  if (key === "todayXp") return Math.min(100, Math.round((value / 240) * 100));
   if (key === "streakDays") return Math.min(100, Math.round((value / 10) * 100));
+  if (key === "weeklyStudyMinutes") return Math.min(100, Math.round((value / 420) * 100));
+  if (key === "wrongQuestionCount") return Math.min(100, Math.round((value / 10) * 100));
   return value;
 }
 
@@ -77,7 +93,7 @@ export default function StatsPanel({ stats }) {
               key={item.key}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 * index }}
+              transition={{ delay: 0.05 * index }}
               className="rounded-2xl border border-white/10 bg-white/[0.045] p-4"
             >
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -96,7 +112,7 @@ export default function StatsPanel({ stats }) {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.9, delay: 0.1 }}
+                  transition={{ duration: 0.8 }}
                   className={`h-full rounded-full bg-gradient-to-r ${item.color}`}
                 />
               </div>

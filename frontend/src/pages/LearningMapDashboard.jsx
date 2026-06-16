@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 
-import { getCharts, getDashboard, getLearningMap } from "../api/client.js";
+import { getCharts, getDashboard, getLearningMap, getTasks } from "../api/client.js";
 import AgentPanel from "../components/AgentPanel.jsx";
 import ChartPanel from "../components/ChartPanel.jsx";
+import DataEntryPanel from "../components/DataEntryPanel.jsx";
 import KnowledgeFlowPanel from "../components/KnowledgeFlowPanel.jsx";
 import LearningMap from "../components/LearningMap.jsx";
 import ParticleBackground from "../components/ParticleBackground.jsx";
@@ -15,32 +16,35 @@ export default function LearningMapDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [charts, setCharts] = useState(null);
+  const [tasks, setTasks] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [dashboardData, mapData, chartData] = await Promise.all([
-          getDashboard(),
-          getLearningMap(),
-          getCharts(),
-        ]);
-        setDashboard(dashboardData);
-        setNodes(mapData);
-        setCharts(chartData);
-        setSelectedNode(mapData.find((node) => node.status === "boss") || mapData[0]);
-        setError("");
-      } catch (err) {
-        setError("无法连接后端接口，请先启动 FastAPI 服务：http://localhost:8000");
-      } finally {
-        setLoading(false);
-      }
+  async function loadData({ showLoading = false } = {}) {
+    try {
+      if (showLoading) setLoading(true);
+      const [dashboardData, mapData, chartData, taskData] = await Promise.all([
+        getDashboard(),
+        getLearningMap(),
+        getCharts(),
+        getTasks(),
+      ]);
+      setDashboard(dashboardData);
+      setNodes(mapData);
+      setCharts(chartData);
+      setTasks(taskData);
+      setSelectedNode((current) => current || mapData.find((node) => node.status === "boss") || mapData[0]);
+      setError("");
+    } catch (err) {
+      setError("无法连接后端接口，请先启动 FastAPI 服务：http://localhost:8000");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadData();
+  useEffect(() => {
+    loadData({ showLoading: true });
   }, []);
 
   return (
@@ -71,11 +75,12 @@ export default function LearningMapDashboard() {
 
         {!loading && !error && (
           <div className="mt-5 space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[310px_minmax(0,1fr)_360px]">
+            <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)_360px]">
               <StatsPanel stats={dashboard?.stats} />
               <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
               <AgentPanel agentMessages={dashboard?.agentMessages} />
             </div>
+            <DataEntryPanel tasks={tasks} onChanged={() => loadData()} />
             <KnowledgeFlowPanel nodes={nodes} />
             <ChartPanel charts={charts} />
           </div>

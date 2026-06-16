@@ -17,3 +17,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def init_db():
+    import models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)

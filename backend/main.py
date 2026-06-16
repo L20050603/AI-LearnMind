@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
-from routers import charts, chat, dashboard, emotion_checkins, learning_map, risk, study_records, tasks, wrong_questions
+from routers import charts, chat, dashboard, emotion_checkins, knowledge, learning_map, learning_path, risk, study_records, tasks, wrong_questions
 from seed import seed_database
 
 app = FastAPI(
@@ -31,6 +31,8 @@ def startup():
 
 app.include_router(dashboard.router)
 app.include_router(learning_map.router)
+app.include_router(knowledge.router)
+app.include_router(learning_path.router)
 app.include_router(charts.router)
 app.include_router(chat.router)
 app.include_router(tasks.router)

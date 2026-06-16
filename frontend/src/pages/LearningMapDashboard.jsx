@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 
-import { getCharts, getCurrentRisk, getDashboard, getLearningMap, getTasks } from "../api/client.js";
+import {
+  getCharts,
+  getCurrentRisk,
+  getDashboard,
+  getKnowledgeGraph,
+  getLearningMap,
+  getTasks,
+  getTodayLearningPath,
+} from "../api/client.js";
 import AgentPanel from "../components/AgentPanel.jsx";
 import ChartPanel from "../components/ChartPanel.jsx";
 import DataEntryPanel from "../components/DataEntryPanel.jsx";
@@ -11,6 +19,7 @@ import LearningMap from "../components/LearningMap.jsx";
 import ParticleBackground from "../components/ParticleBackground.jsx";
 import RiskCenter from "../components/RiskCenter.jsx";
 import StatsPanel from "../components/StatsPanel.jsx";
+import TodayPathPanel from "../components/TodayPathPanel.jsx";
 import TopNav from "../components/TopNav.jsx";
 
 export default function LearningMapDashboard() {
@@ -19,6 +28,8 @@ export default function LearningMapDashboard() {
   const [charts, setCharts] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [risk, setRisk] = useState(null);
+  const [knowledgeGraph, setKnowledgeGraph] = useState(null);
+  const [todayPath, setTodayPath] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,19 +37,26 @@ export default function LearningMapDashboard() {
   async function loadData({ showLoading = false } = {}) {
     try {
       if (showLoading) setLoading(true);
-      const [dashboardData, mapData, chartData, taskData, riskData] = await Promise.all([
+      const [dashboardData, mapData, chartData, taskData, riskData, graphData, pathData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
         getCharts(),
         getTasks(),
         getCurrentRisk(),
+        getKnowledgeGraph(),
+        getTodayLearningPath(),
       ]);
       setDashboard(dashboardData);
       setNodes(mapData);
       setCharts(chartData);
       setTasks(taskData);
       setRisk(riskData);
-      setSelectedNode((current) => current || mapData.find((node) => node.status === "boss") || mapData[0]);
+      setKnowledgeGraph(graphData);
+      setTodayPath(pathData);
+      setSelectedNode((current) => {
+        if (current) return mapData.find((node) => node.id === current.id) || current;
+        return mapData.find((node) => node.id === pathData?.recommended?.id) || mapData.find((node) => node.status === "boss") || mapData[0];
+      });
       setError("");
     } catch (err) {
       setError("无法连接后端接口，请先启动 FastAPI 服务：http://localhost:8000");
@@ -81,12 +99,13 @@ export default function LearningMapDashboard() {
           <div className="mt-5 space-y-4">
             <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)_360px]">
               <StatsPanel stats={dashboard?.stats} />
-              <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
+              <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} todayPath={todayPath} />
               <AgentPanel agentMessages={dashboard?.agentMessages} />
             </div>
             <RiskCenter risk={risk} />
+            <TodayPathPanel path={todayPath} />
             <DataEntryPanel tasks={tasks} onChanged={() => loadData()} />
-            <KnowledgeFlowPanel nodes={nodes} />
+            <KnowledgeFlowPanel graph={knowledgeGraph} nodes={nodes} />
             <ChartPanel charts={charts} />
           </div>
         )}

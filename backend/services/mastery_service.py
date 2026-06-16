@@ -1,6 +1,20 @@
-import json
+from models import LearningTask, StudyRecord, WrongQuestion
+from services.knowledge_graph_service import graph_points
+from services.unlock_service import node_status, prerequisites_status
 
-from models import KnowledgePoint, LearningTask, StudyRecord, WrongQuestion
+
+def recommendation_strategy(point, mastery, prereq_details):
+    missing = [item for item in prereq_details if not item["passed"]]
+    if missing:
+        names = "、".join(item["name"] for item in missing)
+        return f"先补前置知识「{names}」，掌握度达到 55% 后再挑战本关。"
+    if point["type"] == "boss":
+        return "Boss 关卡建议先复盘核心概念，再做 3 组典型题，最后记录错题原因。"
+    if mastery < 60:
+        return "建议先用 20 分钟补概念，再用 2 道小题验证理解。"
+    if mastery < 80:
+        return "建议完成一次短复习和错题回看，把掌握度推到 80%。"
+    return "当前掌握较稳，可作为后续关卡的前置支撑。"
 
 
 def point_metrics(db, point_id: int):
@@ -26,25 +40,26 @@ def point_metrics(db, point_id: int):
     }
 
 
-def calculate_point_mastery(db, point: KnowledgePoint):
-    metrics = point_metrics(db, point.id)
+def calculate_point_mastery(db, point):
+    metrics = point_metrics(db, point["id"])
+    base_mastery = 100 if point["id"] == 1 else max(12, 72 - point["difficulty"] * 0.45)
     if metrics["review_count"] == 0 and metrics["task_count"] == 0 and metrics["open_wrong_count"] == 0:
-        mastery = point.base_mastery
+        mastery = base_mastery
     else:
         mastery = (
-            point.base_mastery * 0.18
-            + metrics["accuracy"] * 42
-            + (1 - metrics["wrong_rate"]) * 20
-            + min(metrics["review_count"] / 3, 1) * 10
-            + metrics["task_completion"] * 10
+            base_mastery * 0.14
+            + metrics["accuracy"] * 40
+            + (1 - metrics["wrong_rate"]) * 18
+            + min(metrics["review_count"] / 3, 1) * 12
+            + metrics["task_completion"] * 12
+            + min(metrics["study_minutes"] / max(1, point["estimated_minutes"]), 1.2) * 8
             - min(metrics["open_wrong_count"] * 4, 16)
         )
     return int(max(0, min(100, round(mastery))))
 
 
 def mastery_map(db):
-    points = db.query(KnowledgePoint).order_by(KnowledgePoint.id).all()
-    return {point.id: calculate_point_mastery(db, point) for point in points}
+    return {point["id"]: calculate_point_mastery(db, point) for point in graph_points()}
 
 
 def average_mastery(db):
@@ -53,32 +68,26 @@ def average_mastery(db):
 
 
 def get_knowledge_nodes(db):
-    points = db.query(KnowledgePoint).order_by(KnowledgePoint.id).all()
-    scores = {point.id: calculate_point_mastery(db, point) for point in points}
+    scores = mastery_map(db)
     nodes = []
-
-    for point in points:
-        prereq_ids = json.loads(point.prerequisite_ids or "[]")
-        unlocked = all(scores.get(point_id, 0) >= 55 for point_id in prereq_ids)
-        mastery = scores[point.id]
-        if not unlocked:
-            status = "locked"
-        elif point.node_type == "boss" and mastery < 65:
-            status = "boss"
-        elif mastery >= 80:
-            status = "completed"
-        else:
-            status = "current"
-
+    for point in graph_points():
+        mastery = scores.get(point["id"], 0)
+        unlocked, prereq_details = prerequisites_status(point, scores)
         nodes.append(
             {
-                "id": point.id,
-                "title": point.title,
-                "status": status,
+                "id": point["id"],
+                "title": point["name"],
+                "status": node_status(point, scores),
                 "mastery": mastery,
-                "time": f"{point.recommended_minutes} min",
-                "type": point.node_type,
+                "time": f"{point['estimated_minutes']} min",
+                "type": point["type"],
+                "course": point["course"],
+                "difficulty": point["difficulty"],
+                "exam_weight": point["exam_weight"],
+                "estimated_minutes": point["estimated_minutes"],
+                "prerequisites": prereq_details,
+                "strategy": recommendation_strategy(point, mastery, prereq_details),
+                "unlocked": unlocked,
             }
         )
-
     return nodes

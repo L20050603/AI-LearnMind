@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "学习画像初始化",
+    "course": "AI-LearnMind",
+    "prerequisites": [],
+    "difficulty": 20,
+    "exam_weight": 10,
+    "estimated_minutes": 10,
+    "type": "normal"
+  },
+  {
+    "id": 2,
+    "name": "操作系统基础",
+    "course": "操作系统",
+    "prerequisites": [1],
+    "difficulty": 35,
+    "exam_weight": 55,
+    "estimated_minutes": 30,
+    "type": "normal"
+  },
+  {
+    "id": 3,
+    "name": "进程与线程",
+    "course": "操作系统",
+    "prerequisites": [2],
+    "difficulty": 58,
+    "exam_weight": 72,
+    "estimated_minutes": 45,
+    "type": "normal"
+  },
+  {
+    "id": 4,
+    "name": "调度算法",
+    "course": "操作系统",
+    "prerequisites": [3],
+    "difficulty": 66,
+    "exam_weight": 76,
+    "estimated_minutes": 50,
+    "type": "normal"
+  },
+  {
+    "id": 5,
+    "name": "存储管理",
+    "course": "操作系统",
+    "prerequisites": [4],
+    "difficulty": 70,
+    "exam_weight": 78,
+    "estimated_minutes": 60,
+    "type": "normal"
+  },
+  {
+    "id": 6,
+    "name": "页面置换算法 Boss",
+    "course": "操作系统",
+    "prerequisites": [5],
+    "difficulty": 88,
+    "exam_weight": 92,
+    "estimated_minutes": 90,
+    "type": "boss"
+  },
+  {
+    "id": 7,
+    "name": "文件系统",
+    "course": "操作系统",
+    "prerequisites": [6],
+    "difficulty": 64,
+    "exam_weight": 62,
+    "estimated_minutes": 60,
+    "type": "normal"
+  },
+  {
+    "id": 8,
+    "name": "期末综合挑战",
+    "course": "操作系统",
+    "prerequisites": [2, 3, 4, 5, 6, 7],
+    "difficulty": 95,
+    "exam_weight": 100,
+    "estimated_minutes": 120,
+    "type": "boss"
+  }
+]

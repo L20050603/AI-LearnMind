@@ -37,6 +37,13 @@ class LearningNode(BaseModel):
     mastery: int
     time: str
     type: str
+    course: str | None = None
+    difficulty: int | None = None
+    exam_weight: int | None = None
+    estimated_minutes: int | None = None
+    prerequisites: list[dict] = Field(default_factory=list)
+    strategy: str | None = None
+    unlocked: bool | None = None
 
 
 class ChatRequest(BaseModel):

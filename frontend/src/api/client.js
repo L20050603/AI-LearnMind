@@ -7,6 +7,8 @@ const api = axios.create({
 
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
+export const getKnowledgeGraph = () => api.get("/api/knowledge/graph").then((res) => res.data);
+export const getTodayLearningPath = () => api.get("/api/learning-path/today").then((res) => res.data);
 export const getCharts = () => api.get("/api/charts").then((res) => res.data);
 export const sendChat = (question) => api.post("/api/chat", { question }).then((res) => res.data);
 

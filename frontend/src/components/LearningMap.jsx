@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Clock, Crosshair, Sparkles } from "lucide-react";
+import { Clock, Crosshair, GitBranch, Sparkles } from "lucide-react";
 
 import LevelNode from "./LevelNode.jsx";
 
@@ -17,24 +17,44 @@ const positions = [
 const pathD =
   "M 8 78 C 14 68, 16 64, 21 62 S 30 72, 34 72 S 43 50, 47 48 S 54 35, 58 34 S 68 47, 72 46 S 80 30, 84 28 S 91 17, 93 14";
 
-export default function LearningMap({ nodes, selectedNode, onSelectNode }) {
-  const currentBoss = nodes.find((node) => node.type === "boss" && node.status === "boss") || nodes[5];
-  const displayNode = selectedNode || currentBoss;
+function progressText(nodes) {
+  const completed = nodes.filter((node) => node.status === "completed").length;
+  const unlocked = nodes.filter((node) => node.unlocked).length;
+  return `${nodes.length} 个关卡 · 已完成 ${completed} · 已解锁 ${unlocked}`;
+}
+
+function PrerequisiteList({ node }) {
+  const prerequisites = node?.prerequisites || [];
+  if (!prerequisites.length) return <p className="text-sm text-slate-400">该关卡没有前置知识。</p>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {prerequisites.map((item) => (
+        <span
+          key={item.id}
+          className={`rounded-full border px-3 py-1 text-xs ${
+            item.passed ? "border-emerald-200/25 bg-emerald-400/10 text-emerald-100" : "border-amber-200/25 bg-amber-400/10 text-amber-100"
+          }`}
+        >
+          {item.name} · {item.mastery}%
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPath }) {
+  const recommended = todayPath?.recommended;
+  const displayNode = selectedNode || recommended || nodes.find((node) => node.status === "boss") || nodes[0];
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="glass-panel relative min-h-[560px] overflow-hidden p-5"
-    >
+    <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel relative min-h-[590px] overflow-hidden p-5">
       <div className="mb-3 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase text-violet-200/60">Adventure Path</p>
+          <p className="text-xs uppercase text-violet-200/60">Knowledge Graph Driven Path</p>
           <h2 className="text-xl font-semibold text-white">操作系统学习闯关星图</h2>
         </div>
         <div className="rounded-full border border-cyan-200/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
-          8 个关卡 · 当前进度 63%
+          {progressText(nodes)}
         </div>
       </div>
 
@@ -56,41 +76,19 @@ export default function LearningMap({ nodes, selectedNode, onSelectNode }) {
             </filter>
           </defs>
           <path d={pathD} fill="none" stroke="rgba(148,163,184,0.2)" strokeWidth="1.8" strokeLinecap="round" />
-          <motion.path
-            d={pathD}
-            fill="none"
-            stroke="url(#routeGradient)"
-            strokeWidth="1.15"
-            strokeDasharray="3 2"
-            strokeLinecap="round"
-            filter="url(#routeGlow)"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1.3, ease: "easeOut" }}
-          />
+          <motion.path d={pathD} fill="none" stroke="url(#routeGradient)" strokeWidth="1.15" strokeDasharray="3 2" strokeLinecap="round" filter="url(#routeGlow)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.3, ease: "easeOut" }} />
         </svg>
 
         {nodes.map((node, index) => (
-          <LevelNode
-            key={node.id}
-            node={node}
-            position={positions[index]}
-            onSelect={onSelectNode}
-            selected={displayNode?.id === node.id}
-          />
+          <LevelNode key={node.id} node={node} position={positions[index] || { x: 10 + index * 10, y: 50 }} onSelect={onSelectNode} selected={displayNode?.id === node.id} />
         ))}
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="absolute bottom-5 right-5 w-[min(360px,calc(100%-40px))] rounded-3xl border border-violet-200/20 bg-slate-950/78 p-4 text-sm text-slate-100 shadow-neon backdrop-blur-xl"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7 }} className="absolute bottom-5 right-5 w-[min(390px,calc(100%-40px))] rounded-3xl border border-violet-200/20 bg-slate-950/82 p-4 text-sm text-slate-100 shadow-neon backdrop-blur-xl">
           <div className="mb-2 flex items-center gap-2 text-violet-100">
             <Crosshair size={17} />
-            当前挑战：页面置换算法 Boss
+            当前推荐：{recommended?.title || displayNode?.title}
           </div>
-          <p className="text-slate-300">AI 建议：先复习 OPT / FIFO / LRU 对比，再完成 5 道练习题。</p>
+          <p className="text-slate-300">{recommended?.strategy || displayNode?.strategy}</p>
         </motion.div>
       </div>
 
@@ -100,10 +98,19 @@ export default function LearningMap({ nodes, selectedNode, onSelectNode }) {
             <Sparkles size={17} />
             已选关卡详情
           </div>
-          <h3 className="text-lg font-semibold text-white">{displayNode?.title || "页面置换算法 Boss"}</h3>
+          <h3 className="text-lg font-semibold text-white">{displayNode?.title}</h3>
           <p className="mt-1 text-sm text-slate-300">
-            状态：{displayNode?.status || "boss"} · 掌握度：{displayNode?.mastery ?? 42}% · 类型：
-            {displayNode?.type || "boss"}
+            状态：{displayNode?.status} · 掌握度：{displayNode?.mastery}% · 难度：{displayNode?.difficulty} · 考试权重：{displayNode?.exam_weight}%
+          </p>
+          <div className="mt-3">
+            <div className="mb-2 flex items-center gap-2 text-sm text-violet-100">
+              <GitBranch size={15} />
+              前置知识
+            </div>
+            <PrerequisiteList node={displayNode} />
+          </div>
+          <p className="mt-3 rounded-2xl border border-cyan-200/10 bg-cyan-400/8 p-3 text-sm leading-6 text-slate-200">
+            推荐策略：{displayNode?.strategy}
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
@@ -111,8 +118,8 @@ export default function LearningMap({ nodes, selectedNode, onSelectNode }) {
             <Clock size={17} />
             推荐学习时间
           </div>
-          <p className="text-2xl font-bold text-white">{displayNode?.time || "90 min"}</p>
-          <p className="text-xs text-slate-400">建议拆成 3 轮低压力训练</p>
+          <p className="text-2xl font-bold text-white">{displayNode?.time}</p>
+          <p className="text-xs text-slate-400">由图谱难度和掌握度共同决定</p>
         </div>
       </div>
     </motion.section>

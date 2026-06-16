@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import {
-  getCharts,
   getAgentsRun,
+  getCharts,
   getCurrentRisk,
   getDashboard,
   getKnowledgeGraph,
@@ -20,6 +19,7 @@ import LearningMap from "../components/LearningMap.jsx";
 import ParticleBackground from "../components/ParticleBackground.jsx";
 import RiskCenter from "../components/RiskCenter.jsx";
 import StatsPanel from "../components/StatsPanel.jsx";
+import SystemState from "../components/SystemState.jsx";
 import TodayPathPanel from "../components/TodayPathPanel.jsx";
 import TopNav from "../components/TopNav.jsx";
 
@@ -79,40 +79,60 @@ export default function LearningMapDashboard() {
       <main className="relative z-10 mx-auto max-w-[1530px] px-4 py-4 md:px-6">
         <TopNav student={dashboard?.student} />
 
-        {loading && (
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <div className="glass-panel flex items-center gap-3 px-6 py-4 text-cyan-100">
-              <Loader2 className="animate-spin" />
-              正在载入学习星图...
-            </div>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {loading && (
+            <SystemState
+              key="loading"
+              type="loading"
+              title="正在载入学习星图"
+              description="正在连接后端、读取演示数据、计算风险和学习路径。"
+            />
+          )}
 
-        {!loading && error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto mt-8 flex max-w-2xl items-center gap-3 rounded-3xl border border-rose-300/30 bg-rose-500/10 p-5 text-rose-100"
-          >
-            <AlertCircle />
-            {error}
-          </motion.div>
-        )}
+          {!loading && error && (
+            <SystemState
+              key="error"
+              type="error"
+              title="后端连接失败"
+              description={error}
+              actionLabel="重新连接"
+              onAction={() => loadData({ showLoading: true })}
+            />
+          )}
 
-        {!loading && !error && (
-          <div className="mt-5 space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)_360px]">
-              <StatsPanel stats={dashboard?.stats} />
-              <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} todayPath={todayPath} />
-              <AgentPanel agentMessages={dashboard?.agentMessages} initialRun={agentRun} />
-            </div>
-            <RiskCenter risk={risk} />
-            <TodayPathPanel path={todayPath} />
-            <DataEntryPanel tasks={tasks} onChanged={() => loadData()} />
-            <KnowledgeFlowPanel graph={knowledgeGraph} nodes={nodes} />
-            <ChartPanel charts={charts} />
-          </div>
-        )}
+          {!loading && !error && nodes.length === 0 && (
+            <SystemState
+              key="empty"
+              type="empty"
+              title="暂无学习地图数据"
+              description="请在 backend 目录运行 python seed.py 初始化演示数据，然后刷新页面。"
+              actionLabel="刷新数据"
+              onAction={() => loadData({ showLoading: true })}
+            />
+          )}
+
+          {!loading && !error && nodes.length > 0 && (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28 }}
+              className="mt-5 space-y-4"
+            >
+              <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)_360px]">
+                <StatsPanel stats={dashboard?.stats} />
+                <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} todayPath={todayPath} />
+                <AgentPanel agentMessages={dashboard?.agentMessages} initialRun={agentRun} />
+              </div>
+              <RiskCenter risk={risk} />
+              <TodayPathPanel path={todayPath} />
+              <DataEntryPanel tasks={tasks} onChanged={() => loadData()} />
+              <KnowledgeFlowPanel graph={knowledgeGraph} nodes={nodes} />
+              <ChartPanel charts={charts} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

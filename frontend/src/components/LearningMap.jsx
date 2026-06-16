@@ -43,6 +43,18 @@ function PrerequisiteList({ node }) {
 }
 
 export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPath }) {
+  if (!nodes?.length) {
+    return (
+      <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="glass-panel flex min-h-[420px] items-center justify-center p-5 text-center">
+        <div>
+          <p className="text-xs uppercase text-violet-200/60">Learning Map</p>
+          <h2 className="mt-2 text-xl font-semibold text-white">暂无关卡数据</h2>
+          <p className="mt-2 text-sm text-slate-300">请先初始化演示数据，系统会自动生成知识图谱闯关地图。</p>
+        </div>
+      </motion.section>
+    );
+  }
+
   const recommended = todayPath?.recommended;
   const displayNode = selectedNode || recommended || nodes.find((node) => node.status === "boss") || nodes[0];
 

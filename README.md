@@ -1,24 +1,65 @@
 # AI-LearnMind 知学伴
 
-AI-LearnMind 是一个基于多智能体协同的大学生学习状态诊断与心理陪伴系统。项目采用 React + Vite 前端、FastAPI + SQLite 后端，围绕学习任务、学习记录、错题、情绪打卡、风险评估、知识图谱和学习路径规划形成闭环。
+AI-LearnMind 是一个“基于多智能体协同的大学生学习状态诊断与心理陪伴系统”。系统以学习闯关地图为主界面，把操作系统知识点设计成可解锁关卡，并通过真实数据库、专家规则、知识图谱、多 Agent 黑板协同和本地课程资料检索，完成从学习记录到个性化建议和周报生成的闭环。
 
-## 后端运行
+## 技术栈
+
+前端：
+
+- React
+- Vite
+- Tailwind CSS
+- Framer Motion
+- ECharts
+- React Flow
+- axios
+- lucide-react
+
+后端：
+
+- Python
+- FastAPI
+- SQLAlchemy
+- SQLite
+- Pydantic
+- pytest
+
+智能模块：
+
+- 专家规则引擎
+- 情绪词典分析
+- 知识图谱
+- 学习路径规划
+- 多 Agent 黑板协同
+- 本地课程资料关键词检索
+- 可选 LLM 接口
+- Markdown 学习报告生成
+
+## 功能说明
+
+- 学习闯关地图：8 个操作系统知识点节点，支持已完成、当前、锁定、Boss 状态。
+- 数据 CRUD：学习任务、学习记录、情绪打卡、错题记录。
+- 动态掌握度：根据正确率、错题率、复习次数、任务完成情况计算。
+- 风险评分：输出风险分、风险等级、触发规则、原因和建议。
+- 知识图谱：根据前置知识判断解锁状态，并生成今日学习路径。
+- 多 Agent 协同：Profile、Diagnosis、Planner、Emotion、Intervention、Report 六个 Agent 写入黑板。
+- AI 导师：支持连续对话；有 API Key 时调用 LLM，没有 API Key 时使用本地资料检索和模板回复。
+- 学习周报：生成 JSON 周报和可复制 Markdown 报告。
+
+## 运行命令
+
+后端：
 
 ```bash
 cd backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+python seed.py
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-接口地址：
-
-```text
-http://127.0.0.1:8000
-```
-
-## 前端运行
+前端：
 
 ```bash
 cd frontend
@@ -26,99 +67,135 @@ npm install
 npm run dev
 ```
 
-访问地址：
+访问：
 
 ```text
 http://localhost:5173
 ```
 
-## 初始化示例数据
+## 演示数据
+
+运行 `python seed.py` 会生成：
+
+- 操作系统课程
+- 8 个知识点
+- 10 条学习任务
+- 7 天学习记录
+- 5 条情绪打卡
+- 10 条错题记录
+
+演示脚本见：[docs/demo_script.md](docs/demo_script.md)
+
+## 系统架构
+
+```text
+frontend/
+  React Dashboard
+    ├─ 学习闯关地图
+    ├─ 数据录入面板
+    ├─ 风险中心
+    ├─ 多 Agent 协同面板
+    ├─ 知识图谱 React Flow
+    └─ ECharts 仪表盘
+
+backend/
+  FastAPI
+    ├─ CRUD Routers
+    ├─ Risk Engine
+    ├─ Emotion Service
+    ├─ Mastery Service
+    ├─ Knowledge Graph Service
+    ├─ Path Planner
+    ├─ Agent Coordinator + Blackboard
+    ├─ Tutor Retrieval Service
+    └─ Report Service
+
+SQLite
+  users / learning_tasks / study_records / emotion_checkins
+  wrong_questions / knowledge_points / risk_reports
+```
+
+## API 说明
+
+基础数据：
+
+- `GET /api/dashboard`
+- `GET /api/charts`
+- `GET /api/learning-map`
+- `GET /api/knowledge/graph`
+- `GET /api/learning-path/today`
+
+学习数据：
+
+- `GET /api/tasks`
+- `POST /api/tasks`
+- `PATCH /api/tasks/{id}`
+- `DELETE /api/tasks/{id}`
+- `GET /api/study-records`
+- `POST /api/study-records`
+- `GET /api/emotion-checkins`
+- `POST /api/emotion-checkins`
+- `GET /api/wrong-questions`
+- `POST /api/wrong-questions`
+
+智能诊断：
+
+- `GET /api/risk/current`
+- `POST /api/risk/evaluate`
+- `GET /api/agents/run`
+- `GET /api/agents/blackboard`
+- `GET /api/agents/final-advice`
+
+AI 导师与报告：
+
+- `POST /api/chat`
+- `POST /api/tutor/explain`
+- `GET /api/reports/weekly`
+- `GET /api/reports/export-md`
+
+## 测试
 
 ```bash
 cd backend
 venv\Scripts\activate
-python seed.py
+pytest
 ```
 
-## 已完成阶段
+测试覆盖：
 
-### 第一阶段：项目骨架与学习闯关地图
+- 任务接口 CRUD
+- 风险评分可解释输出
+- 情绪词典分析
+- 学习路径规划
 
-- 搭建 FastAPI 后端和 React/Vite/Tailwind 前端。
-- 首页采用暗色科技风、粒子背景、玻璃拟态卡片和学习闯关地图。
-- 支持 AI 导师模拟问答、ECharts 趋势图、知识雷达图和情绪压力图。
+## 可选 LLM 配置
 
-### 第二阶段：数据库与真实学习数据 CRUD
+默认不需要任何 API Key。系统会使用本地课程资料检索和模板生成回复。
 
-- 接入 SQLAlchemy + SQLite，数据保存到 `backend/learnmind.db`。
-- 新增 `User`、`LearningTask`、`StudyRecord`、`EmotionCheckin`、`WrongQuestion`、`KnowledgePoint`、`RiskReport`。
-- 实现任务、学习记录、情绪打卡、错题记录 CRUD。
-- Dashboard 从数据库统计今日任务完成率、本周学习时长、错题数量和连续学习天数。
+如果要接入真实 LLM，可配置：
 
-### 第三阶段：专家规则引擎与可解释风险评分
+```bash
+set OPENAI_API_KEY=你的Key
+set LLM_MODEL=gpt-4o-mini
+```
 
-- 新增 `risk_engine.py`、`emotion_service.py`、`mastery_service.py`、`explanation_service.py`。
-- 使用 `emotion_lexicon.json` 做焦虑、疲惫、积极、拖延、求助类情绪词分析。
-- 风险评分综合任务完成率、正确率、错题率、知识掌握度、学习时长稳定性和压力等级。
-- 新增 `GET /api/risk/current`、`POST /api/risk/evaluate`。
-- 前端新增风险中心，展示风险仪表盘、触发规则、风险原因和建议卡片。
+或：
 
-### 第四阶段：知识图谱与真实学习路径规划
+```bash
+set LLM_API_KEY=你的Key
+set LLM_API_URL=https://api.openai.com/v1/chat/completions
+set LLM_MODEL=gpt-4o-mini
+```
 
-- 新增 `services/knowledge_graph.json`，以知识点、前置关系、难度、考试权重、预计时长和 Boss 类型描述课程图谱。
-- 新增 `knowledge_graph_service.py`、`unlock_service.py`、`path_planner.py`。
-- `GET /api/learning-map` 改为由知识图谱、掌握度和解锁规则动态生成。
-- 新增 `GET /api/knowledge/graph`，返回 React Flow 可视化图谱节点和边。
-- 新增 `GET /api/learning-path/today`，返回当前推荐关卡、今日学习路径和候选优先级。
-- 学习路径使用可解释公式：
+## 完整闭环
+
+演示主线：
 
 ```text
-priority = exam_weight * 0.35
-         + weakness_score * 0.35
-         + prerequisite_importance * 0.2
-         + urgency * 0.1
+添加学习记录
+  → 掌握度重新计算
+  → 风险评分更新
+  → Agent 黑板协同
+  → 今日路径规划
+  → 学习报告生成
 ```
-
-### 第五阶段：多 Agent 黑板协同系统
-
-- 新增 `services/agents/`，包含 Profile、Diagnosis、Planner、Emotion、Intervention、Report 六个规则 Agent。
-- 每个 Agent 都基于真实数据库、风险评分、情绪词典、知识图谱和今日路径输出结论。
-- 新增 `blackboard.py`，统一保存 `agent_name`、`input_summary`、`conclusion`、`confidence`、`evidence`、`suggestions`。
-- 新增 `agent_coordinator.py`，依次运行多个 Agent，并用置信度加权和风险规则生成最终综合建议。
-- 新增接口：
-  - `GET /api/agents/run`
-  - `GET /api/agents/blackboard`
-  - `GET /api/agents/final-advice`
-- 前端 AI 导师面板升级为多 Agent 协同面板，支持依次分析动画、黑板证据展示和最终建议卡片。
-
-### 第六阶段：AI 导师、课程资料检索与学习报告
-
-- `/api/chat` 支持连续对话历史；配置 `OPENAI_API_KEY` 或 `LLM_API_KEY` 时尝试调用真实 LLM，否则使用本地课程资料检索和模板回复。
-- 新增 `services/course_materials.json`，以本地 JSON 课程资料支撑关键词检索。
-- 新增 `retrieval_service.py`、`tutor_service.py`、`report_service.py`。
-- 新增 `POST /api/tutor/explain`，可针对某个知识点生成讲解、步骤、例子和相关资料来源。
-- 新增 `GET /api/reports/weekly` 和 `GET /api/reports/export-md`，生成周报 JSON 和 Markdown。
-- 周报包含本周学习总时长、任务完成率、知识掌握变化、薄弱知识点、情绪压力变化、风险原因、下周建议和 Agent 综合总结。
-- 前端 AI 导师支持连续对话、知识点讲解、一键生成周报和复制 Markdown。
-
-## 主要接口
-
-- `GET /api/dashboard`
-- `GET /api/learning-map`
-- `GET /api/charts`
-- `POST /api/chat`
-- `GET/POST /api/tasks`
-- `PATCH/DELETE /api/tasks/{id}`
-- `GET/POST /api/study-records`
-- `GET/POST /api/emotion-checkins`
-- `GET/POST /api/wrong-questions`
-- `GET /api/risk/current`
-- `POST /api/risk/evaluate`
-- `GET /api/knowledge/graph`
-- `GET /api/learning-path/today`
-- `GET /api/agents/run`
-- `GET /api/agents/blackboard`
-- `GET /api/agents/final-advice`
-- `POST /api/tutor/explain`
-- `GET /api/reports/weekly`
-- `GET /api/reports/export-md`

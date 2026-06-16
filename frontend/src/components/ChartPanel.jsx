@@ -43,7 +43,13 @@ const textColor = "#cbd5e1";
 const grid = { left: 36, right: 18, top: 36, bottom: 32 };
 
 export default function ChartPanel({ charts }) {
-  if (!charts) return null;
+  if (!charts) {
+    return (
+      <section className="glass-panel p-5 text-center">
+        <p className="text-sm text-slate-300">暂无图表数据，请添加学习记录后刷新。</p>
+      </section>
+    );
+  }
 
   const weeklyOption = {
     color: ["#22d3ee", "#a78bfa"],

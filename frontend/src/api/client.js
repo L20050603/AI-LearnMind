@@ -15,6 +15,12 @@ export const getAgentsFinalAdvice = () => api.get("/api/agents/final-advice").th
 export const getCharts = () => api.get("/api/charts").then((res) => res.data);
 export const sendChat = (question, history = []) => api.post("/api/chat", { question, history }).then((res) => res.data);
 export const explainTopic = (topic, question = "") => api.post("/api/tutor/explain", { topic, question }).then((res) => res.data);
+export const getAiStatus = () => api.get("/api/ai/status").then((res) => res.data);
+export const tutorChat = (payload) => api.post("/api/tutor/chat", payload).then((res) => res.data);
+export const tutorExplain = (payload) => api.post("/api/tutor/explain", payload).then((res) => res.data);
+export const tutorExplainWrong = (payload) => api.post("/api/tutor/explain-wrong-question", payload).then((res) => res.data);
+export const tutorGenerateQuiz = (payload) => api.post("/api/tutor/generate-quiz", payload).then((res) => res.data);
+export const tutorSummarizeResource = (payload) => api.post("/api/tutor/summarize-resource", payload).then((res) => res.data);
 export const getWeeklyReport = () => api.get("/api/reports/weekly").then((res) => res.data);
 export const getReportMarkdown = () => api.get("/api/reports/export-md").then((res) => res.data);
 

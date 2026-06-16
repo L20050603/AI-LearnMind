@@ -62,6 +62,7 @@ class ChatResponse(BaseModel):
 class TutorExplainRequest(BaseModel):
     topic: str
     question: str = ""
+    selectedLevelId: int | None = None
 
 
 class TutorExplainResponse(BaseModel):
@@ -71,6 +72,39 @@ class TutorExplainResponse(BaseModel):
     examples: list[str]
     related_points: list[str]
     sources: list[dict] = Field(default_factory=list)
+
+
+class TutorChatRequest(BaseModel):
+    message: str
+    selectedLevelId: int | None = None
+    history: list[dict] = Field(default_factory=list)
+
+
+class TutorWrongQuestionRequest(BaseModel):
+    wrong_question_id: int | None = None
+
+
+class TutorQuizRequest(BaseModel):
+    knowledge_point_id: int
+    count: int = Field(default=5, ge=1, le=10)
+
+
+class TutorResourceSummaryRequest(BaseModel):
+    resource_id: str | None = None
+    title: str = ""
+    content: str = ""
+
+
+class TutorAIResponse(BaseModel):
+    answer: str
+    mode: str = "local"
+    sources: list[dict] = Field(default_factory=list)
+    suggestedQuestions: list[str] = Field(default_factory=list)
+    topic: str | None = None
+    steps: list[str] = Field(default_factory=list)
+    examples: list[str] = Field(default_factory=list)
+    quiz: list[dict] = Field(default_factory=list)
+    summary: dict | None = None
 
 
 class TaskCreate(BaseModel):

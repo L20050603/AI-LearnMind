@@ -40,6 +40,7 @@ export function AppDataProvider({ children }) {
         getKnowledgeGraph(),
         getTodayLearningPath(),
       ]);
+
       setDashboard(dashboardData);
       setLearningMap(mapData);
       setCharts(chartData);
@@ -54,7 +55,7 @@ export function AppDataProvider({ children }) {
       });
       setError("");
     } catch (err) {
-      setError("无法连接后端接口，请先启动 FastAPI 服务：http://localhost:8000");
+      setError("Cannot connect to FastAPI. Please start the backend at http://localhost:8000.");
     } finally {
       setLoading(false);
     }

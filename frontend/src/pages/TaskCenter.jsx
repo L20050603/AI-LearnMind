@@ -20,7 +20,7 @@ export default function TaskCenter() {
 
   return (
     <PageContainer
-      eyebrow="Task Center"
+      eyebrow="任务中心"
       title="任务中心"
       description="集中管理学习任务、学习记录、情绪打卡和错题记录。每次操作都会刷新驾驶舱、风险和学习地图数据。"
     >

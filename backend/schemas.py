@@ -107,6 +107,55 @@ class TutorAIResponse(BaseModel):
     summary: dict | None = None
 
 
+class ResourceSearchRequest(BaseModel):
+    query: str = ""
+    knowledge_point_id: int | None = None
+    limit: int = Field(default=6, ge=1, le=20)
+
+
+class ResourceFavoriteRequest(BaseModel):
+    resource_id: str
+    knowledge_point_id: int | None = None
+    title: str = ""
+
+
+class ResourceSearchResponse(BaseModel):
+    query: str
+    knowledge_point_id: int | None = None
+    total: int
+    resources: list[dict]
+    related_points: list[str] = Field(default_factory=list)
+
+
+class ResourceSearchPayload(BaseModel):
+    knowledgePointId: int | None = None
+    course: str = "操作系统"
+    goal: str = "期末复习"
+    resourceTypes: list[str] = Field(default_factory=lambda: ["article", "exercise", "video"])
+    query: str = ""
+    limit: int = Field(default=8, ge=1, le=20)
+
+
+class ResourceCrawlPayload(BaseModel):
+    url: str
+    knowledgePointId: int | None = None
+
+
+class ResourceCardPayload(BaseModel):
+    resourceId: int
+
+
+class QuizGeneratePayload(BaseModel):
+    knowledgePointId: int
+    sourceType: str = "level"
+    sourceId: int | None = None
+    count: int = Field(default=5, ge=1, le=10)
+
+
+class QuizSubmitPayload(BaseModel):
+    answers: dict[str, str] = Field(default_factory=dict)
+
+
 class TaskCreate(BaseModel):
     title: str
     knowledge_point_id: int

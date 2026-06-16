@@ -12,7 +12,7 @@ export default function LearningMapPage() {
 
   return (
     <PageContainer
-      eyebrow="Learning Map"
+      eyebrow="学习闯关地图"
       title="学习闯关地图"
       description="由知识图谱、掌握度、前置知识和解锁规则动态生成。"
       actions={

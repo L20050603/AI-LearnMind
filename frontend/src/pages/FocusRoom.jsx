@@ -35,7 +35,7 @@ export default function FocusRoom() {
   }
 
   return (
-    <PageContainer eyebrow="Focus Room" title="专注学习空间" description="围绕当前关卡启动专注学习，并真实写入学习记录。">
+    <PageContainer eyebrow="专注空间" title="专注学习空间" description="围绕当前关卡启动专注学习，并真实写入学习记录。">
       <div className="glass-panel p-6 text-center">
         <div className="mx-auto max-w-md text-left">
           <KnowledgePointSelect

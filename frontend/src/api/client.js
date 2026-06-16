@@ -21,6 +21,20 @@ export const tutorExplain = (payload) => api.post("/api/tutor/explain", payload)
 export const tutorExplainWrong = (payload) => api.post("/api/tutor/explain-wrong-question", payload).then((res) => res.data);
 export const tutorGenerateQuiz = (payload) => api.post("/api/tutor/generate-quiz", payload).then((res) => res.data);
 export const tutorSummarizeResource = (payload) => api.post("/api/tutor/summarize-resource", payload).then((res) => res.data);
+export const searchResources = (payload) => api.post("/api/resources/search", payload).then((res) => res.data);
+export const crawlResource = (payload) => api.post("/api/resources/crawl", payload).then((res) => res.data);
+export const getResources = () => api.get("/api/resources").then((res) => res.data);
+export const getResource = (id) => api.get(`/api/resources/${id}`).then((res) => res.data);
+export const toggleResourceFavorite = (id) => api.patch(`/api/resources/${id}/favorite`).then((res) => res.data);
+export const addResourceToPlan = (id) => api.post(`/api/resources/${id}/add-to-plan`).then((res) => res.data);
+export const getTodayResourceRecommendations = () => api.get("/api/resources/recommendations/today").then((res) => res.data);
+export const generateResourceCard = (payload) => api.post("/api/resources/generate-card", payload).then((res) => res.data);
+export const generateResourceQuiz = (id) => api.post(`/api/resources/${id}/generate-quiz`).then((res) => res.data);
+
+export const generateQuiz = (payload) => api.post("/api/quiz/generate", payload).then((res) => res.data);
+export const getQuiz = (id) => api.get(`/api/quiz/${id}`).then((res) => res.data);
+export const submitQuiz = (id, payload) => api.post(`/api/quiz/${id}/submit`, payload).then((res) => res.data);
+export const getQuizHistory = () => api.get("/api/quiz/history").then((res) => res.data);
 export const getWeeklyReport = () => api.get("/api/reports/weekly").then((res) => res.data);
 export const getReportMarkdown = () => api.get("/api/reports/export-md").then((res) => res.data);
 

@@ -14,7 +14,7 @@ export default function Settings() {
   }, []);
 
   return (
-    <PageContainer eyebrow="Settings" title="系统设置与隐私" description="查看 AI 运行模式、后端 API Key 配置说明和本地数据提示。">
+    <PageContainer eyebrow="系统设置" title="系统设置与隐私" description="查看 AI 运行模式、后端 API Key 配置说明和本地数据提示。">
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="glass-panel p-5">
           <div className="mb-3 flex items-center justify-between gap-3">

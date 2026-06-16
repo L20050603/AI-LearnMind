@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   return (
     <PageContainer
-      eyebrow="Dashboard"
+      eyebrow="学习驾驶舱"
       title="学习驾驶舱"
       description="这里只保留核心指标、推荐关卡和快捷入口。学习地图、风险诊断、Agent、知识图谱和报告已拆分到独立页面。"
       actions={

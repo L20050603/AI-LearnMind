@@ -9,6 +9,7 @@ import KnowledgeGraphPage from "./pages/KnowledgeGraphPage.jsx";
 import LearningMapPage from "./pages/LearningMapPage.jsx";
 import MultimodalLab from "./pages/MultimodalLab.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
+import QuizPage from "./pages/QuizPage.jsx";
 import ResourceHunter from "./pages/ResourceHunter.jsx";
 import RiskCenterPage from "./pages/RiskCenterPage.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -27,6 +28,7 @@ function AnimatedRoutes() {
         <Route path="/agents" element={<AgentLab />} />
         <Route path="/knowledge" element={<KnowledgeGraphPage />} />
         <Route path="/resources" element={<ResourceHunter />} />
+        <Route path="/quiz/:quizId" element={<QuizPage />} />
         <Route path="/tutor" element={<TutorPage />} />
         <Route path="/reports" element={<ReportPage />} />
         <Route path="/focus" element={<FocusRoom />} />

@@ -131,7 +131,7 @@ export default function TutorPage() {
 
   return (
     <PageContainer
-      eyebrow="AI Tutor"
+      eyebrow="AI 导师"
       title="AI 导师"
       description="统一 AI Provider：没有 API Key 时使用本地模板和课程资料，有 Key 时自动启用豆包/兼容大模型。"
       actions={<AiModeBadge mode={lastMode} status={aiStatus} />}

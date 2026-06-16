@@ -3,7 +3,7 @@ import PageContainer from "../layouts/PageContainer.jsx";
 
 export default function ReportPage() {
   return (
-    <PageContainer eyebrow="Reports" title="学习周报" description="生成本周学习报告、复制 Markdown，并保留后续历史报告扩展入口。">
+    <PageContainer eyebrow="学习报告" title="学习周报" description="生成本周学习报告、复制 Markdown，并保留后续历史报告扩展入口。">
       <ReportWorkspace />
       <div className="glass-panel p-5">
         <h3 className="text-lg font-semibold text-white">历史报告</h3>

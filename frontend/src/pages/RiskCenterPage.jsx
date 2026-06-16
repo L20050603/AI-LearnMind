@@ -23,7 +23,7 @@ export default function RiskCenterPage() {
 
   return (
     <PageContainer
-      eyebrow="Risk Diagnosis"
+      eyebrow="风险诊断"
       title="风险诊断中心"
       description="展示风险仪表盘、触发规则、原因解释、建议和历史趋势。"
       actions={

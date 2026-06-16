@@ -111,3 +111,91 @@ class InteractionEvent(Base):
     target_id = Column(Integer, nullable=True)
     metadata_json = Column(Text, default="{}")
     created_at = Column(DateTime, default=utc_now)
+
+
+class LearningResource(Base):
+    __tablename__ = "learning_resources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    url = Column(String, default="", index=True)
+    source_domain = Column(String, default="")
+    resource_type = Column(String, default="article")
+    related_course = Column(String, default="操作系统")
+    related_knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), index=True)
+    summary = Column(Text, default="")
+    content_excerpt = Column(Text, default="")
+    keywords_json = Column(Text, default="[]")
+    quality_score = Column(Integer, default=70)
+    relevance_score = Column(Integer, default=70)
+    readability_score = Column(Integer, default=70)
+    freshness_score = Column(Integer, default=70)
+    difficulty_level = Column(String, default="normal")
+    estimated_minutes = Column(Integer, default=12)
+    is_favorite = Column(Boolean, default=False)
+    added_to_plan = Column(Boolean, default=False)
+    mode = Column(String, default="local")
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+
+class ResourceCrawlLog(Base):
+    __tablename__ = "resource_crawl_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, index=True, nullable=False)
+    status = Column(String, default="pending")
+    message = Column(Text, default="")
+    http_status = Column(Integer, default=0)
+    extracted_chars = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class ResourceRecommendation(Base):
+    __tablename__ = "resource_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
+    resource_id = Column(Integer, ForeignKey("learning_resources.id"), index=True)
+    knowledge_point_id = Column(Integer, index=True)
+    reason = Column(Text, default="")
+    priority = Column(Integer, default=50)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class Quiz(Base):
+    __tablename__ = "quizzes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
+    knowledge_point_id = Column(Integer, index=True)
+    title = Column(String, nullable=False)
+    source_type = Column(String, default="level")
+    source_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), index=True)
+    question = Column(Text, nullable=False)
+    options_json = Column(Text, default="[]")
+    answer = Column(String, default="")
+    explanation = Column(Text, default="")
+    difficulty = Column(String, default="normal")
+
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
+    score = Column(Integer, default=0)
+    correct_count = Column(Integer, default=0)
+    total_count = Column(Integer, default=0)
+    answers_json = Column(Text, default="{}")
+    xp_gained = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utc_now)

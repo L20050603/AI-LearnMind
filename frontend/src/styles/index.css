@@ -105,6 +105,30 @@ input {
     font-weight: 700;
     box-shadow: 0 0 24px rgba(34, 211, 238, 0.28);
   }
+
+  .primary-submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}
+
+.modal-scrollbar {
+  scrollbar-color: rgba(34, 211, 238, 0.46) rgba(15, 23, 42, 0.45);
+  scrollbar-width: thin;
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 999px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.72), rgba(139, 92, 246, 0.72));
+  border-radius: 999px;
 }
 
 .cyber-grid {

@@ -4,6 +4,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 
 import {
   getCharts,
+  getAgentsRun,
   getCurrentRisk,
   getDashboard,
   getKnowledgeGraph,
@@ -30,6 +31,7 @@ export default function LearningMapDashboard() {
   const [risk, setRisk] = useState(null);
   const [knowledgeGraph, setKnowledgeGraph] = useState(null);
   const [todayPath, setTodayPath] = useState(null);
+  const [agentRun, setAgentRun] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,7 +39,7 @@ export default function LearningMapDashboard() {
   async function loadData({ showLoading = false } = {}) {
     try {
       if (showLoading) setLoading(true);
-      const [dashboardData, mapData, chartData, taskData, riskData, graphData, pathData] = await Promise.all([
+      const [dashboardData, mapData, chartData, taskData, riskData, graphData, pathData, agentData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
         getCharts(),
@@ -45,6 +47,7 @@ export default function LearningMapDashboard() {
         getCurrentRisk(),
         getKnowledgeGraph(),
         getTodayLearningPath(),
+        getAgentsRun(),
       ]);
       setDashboard(dashboardData);
       setNodes(mapData);
@@ -53,6 +56,7 @@ export default function LearningMapDashboard() {
       setRisk(riskData);
       setKnowledgeGraph(graphData);
       setTodayPath(pathData);
+      setAgentRun(agentData);
       setSelectedNode((current) => {
         if (current) return mapData.find((node) => node.id === current.id) || current;
         return mapData.find((node) => node.id === pathData?.recommended?.id) || mapData.find((node) => node.status === "boss") || mapData[0];
@@ -100,7 +104,7 @@ export default function LearningMapDashboard() {
             <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)_360px]">
               <StatsPanel stats={dashboard?.stats} />
               <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} todayPath={todayPath} />
-              <AgentPanel agentMessages={dashboard?.agentMessages} />
+              <AgentPanel agentMessages={dashboard?.agentMessages} initialRun={agentRun} />
             </div>
             <RiskCenter risk={risk} />
             <TodayPathPanel path={todayPath} />

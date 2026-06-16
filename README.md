@@ -79,6 +79,18 @@ priority = exam_weight * 0.35
          + urgency * 0.1
 ```
 
+### 第五阶段：多 Agent 黑板协同系统
+
+- 新增 `services/agents/`，包含 Profile、Diagnosis、Planner、Emotion、Intervention、Report 六个规则 Agent。
+- 每个 Agent 都基于真实数据库、风险评分、情绪词典、知识图谱和今日路径输出结论。
+- 新增 `blackboard.py`，统一保存 `agent_name`、`input_summary`、`conclusion`、`confidence`、`evidence`、`suggestions`。
+- 新增 `agent_coordinator.py`，依次运行多个 Agent，并用置信度加权和风险规则生成最终综合建议。
+- 新增接口：
+  - `GET /api/agents/run`
+  - `GET /api/agents/blackboard`
+  - `GET /api/agents/final-advice`
+- 前端 AI 导师面板升级为多 Agent 协同面板，支持依次分析动画、黑板证据展示和最终建议卡片。
+
 ## 主要接口
 
 - `GET /api/dashboard`
@@ -94,3 +106,6 @@ priority = exam_weight * 0.35
 - `POST /api/risk/evaluate`
 - `GET /api/knowledge/graph`
 - `GET /api/learning-path/today`
+- `GET /api/agents/run`
+- `GET /api/agents/blackboard`
+- `GET /api/agents/final-advice`

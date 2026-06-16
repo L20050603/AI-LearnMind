@@ -9,6 +9,9 @@ export const getDashboard = () => api.get("/api/dashboard").then((res) => res.da
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
 export const getKnowledgeGraph = () => api.get("/api/knowledge/graph").then((res) => res.data);
 export const getTodayLearningPath = () => api.get("/api/learning-path/today").then((res) => res.data);
+export const getAgentsRun = () => api.get("/api/agents/run").then((res) => res.data);
+export const getAgentsBlackboard = () => api.get("/api/agents/blackboard").then((res) => res.data);
+export const getAgentsFinalAdvice = () => api.get("/api/agents/final-advice").then((res) => res.data);
 export const getCharts = () => api.get("/api/charts").then((res) => res.data);
 export const sendChat = (question) => api.post("/api/chat", { question }).then((res) => res.data);
 

@@ -127,3 +127,30 @@ class WrongQuestionResponse(BaseModel):
     fixed: bool
 
     model_config = {"from_attributes": True}
+
+
+class RiskEvaluateRequest(BaseModel):
+    mood: str | None = None
+    text: str | None = None
+
+
+class RiskMetrics(BaseModel):
+    task_completion: int
+    accuracy: int
+    wrong_rate: int
+    average_mastery: int
+    study_stability: int
+    learning_efficiency: int
+    stress_score: int
+    stress_level: str
+    knowledge_mastery: dict[int, int]
+    emotion_hits: list[dict]
+
+
+class RiskResponse(BaseModel):
+    risk_score: int
+    risk_level: str
+    reasons: list[str]
+    suggestions: list[str]
+    triggered_rules: list[str]
+    metrics: RiskMetrics

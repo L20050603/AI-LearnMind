@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import EmotionCheckin
 from schemas import EmotionCheckinCreate, EmotionCheckinResponse
-from services.analytics import analyze_emotion
+from services.emotion_service import analyze_emotion
 
 router = APIRouter(prefix="/api/emotion-checkins", tags=["emotion-checkins"])
 

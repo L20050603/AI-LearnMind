@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from schemas import LearningNode
-from services.analytics import get_knowledge_nodes
+from services.mastery_service import get_knowledge_nodes
 
 router = APIRouter(prefix="/api", tags=["learning-map"])
 

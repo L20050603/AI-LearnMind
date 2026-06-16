@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from database import SessionLocal, init_db
 from models import EmotionCheckin, KnowledgePoint, LearningTask, StudyRecord, User, WrongQuestion, utc_now
-from services.analytics import analyze_emotion
+from services.emotion_service import analyze_emotion
 
 
 def seed_database(reset: bool = False):

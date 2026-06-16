@@ -63,6 +63,23 @@ venv\Scripts\activate
 python seed.py
 ```
 
+## 第三阶段功能
+
+- 新增专家规则引擎与可解释风险评分。
+- 新增服务：
+  - `services/risk_engine.py`
+  - `services/emotion_service.py`
+  - `services/mastery_service.py`
+  - `services/explanation_service.py`
+  - `services/emotion_lexicon.json`
+- 风险评分会综合任务完成率、正确率、错题率、知识掌握度、学习时长稳定性和情绪压力。
+- 情绪压力使用词典命中分析，包含焦虑、疲惫、积极、拖延、求助五类词。
+- 新增接口：
+  - `GET /api/risk/current`
+  - `POST /api/risk/evaluate`
+- 每次风险评分返回 `risk_score`、`risk_level`、`reasons`、`suggestions`、`triggered_rules` 和详细指标。
+- 前端新增风险中心，展示风险仪表盘、触发规则、风险原因和 AI 建议卡片。
+
 ## 第二阶段扩展建议
 
 - 接入真实用户登录和 SQLite 数据持久化。

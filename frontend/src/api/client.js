@@ -23,3 +23,6 @@ export const createEmotionCheckin = (payload) => api.post("/api/emotion-checkins
 
 export const getWrongQuestions = () => api.get("/api/wrong-questions").then((res) => res.data);
 export const createWrongQuestion = (payload) => api.post("/api/wrong-questions", payload).then((res) => res.data);
+
+export const getCurrentRisk = () => api.get("/api/risk/current").then((res) => res.data);
+export const evaluateRisk = (payload = {}) => api.post("/api/risk/evaluate", payload).then((res) => res.data);

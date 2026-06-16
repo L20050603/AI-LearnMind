@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 
-import { getCharts, getDashboard, getLearningMap, getTasks } from "../api/client.js";
+import { getCharts, getCurrentRisk, getDashboard, getLearningMap, getTasks } from "../api/client.js";
 import AgentPanel from "../components/AgentPanel.jsx";
 import ChartPanel from "../components/ChartPanel.jsx";
 import DataEntryPanel from "../components/DataEntryPanel.jsx";
 import KnowledgeFlowPanel from "../components/KnowledgeFlowPanel.jsx";
 import LearningMap from "../components/LearningMap.jsx";
 import ParticleBackground from "../components/ParticleBackground.jsx";
+import RiskCenter from "../components/RiskCenter.jsx";
 import StatsPanel from "../components/StatsPanel.jsx";
 import TopNav from "../components/TopNav.jsx";
 
@@ -17,6 +18,7 @@ export default function LearningMapDashboard() {
   const [nodes, setNodes] = useState([]);
   const [charts, setCharts] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [risk, setRisk] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,16 +26,18 @@ export default function LearningMapDashboard() {
   async function loadData({ showLoading = false } = {}) {
     try {
       if (showLoading) setLoading(true);
-      const [dashboardData, mapData, chartData, taskData] = await Promise.all([
+      const [dashboardData, mapData, chartData, taskData, riskData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
         getCharts(),
         getTasks(),
+        getCurrentRisk(),
       ]);
       setDashboard(dashboardData);
       setNodes(mapData);
       setCharts(chartData);
       setTasks(taskData);
+      setRisk(riskData);
       setSelectedNode((current) => current || mapData.find((node) => node.status === "boss") || mapData[0]);
       setError("");
     } catch (err) {
@@ -80,6 +84,7 @@ export default function LearningMapDashboard() {
               <LearningMap nodes={nodes} selectedNode={selectedNode} onSelectNode={setSelectedNode} />
               <AgentPanel agentMessages={dashboard?.agentMessages} />
             </div>
+            <RiskCenter risk={risk} />
             <DataEntryPanel tasks={tasks} onChanged={() => loadData()} />
             <KnowledgeFlowPanel nodes={nodes} />
             <ChartPanel charts={charts} />

@@ -13,7 +13,7 @@ import PageContainer from "../layouts/PageContainer.jsx";
 
 const introMessage = {
   role: "assistant",
-  content: "I am ready. Ask about the selected level, request a quiz, or let me explain your latest wrong question.",
+  content: "我已经准备好了。你可以问我当前关卡、让生成小测验，或者让我解释最近错题。",
   mode: "local",
 };
 
@@ -42,7 +42,7 @@ export default function TutorPage() {
   }, []);
 
   function pushAssistant(data) {
-    const content = data.answer || data.reply || "No answer returned.";
+    const content = data.answer || data.reply || "后端没有返回有效回答。";
     setMessages((items) => [...items, { role: "assistant", content, mode: data.mode || "local", sources: data.sources || [] }]);
     setSources(data.sources || []);
     setSuggested(data.suggestedQuestions || []);
@@ -61,7 +61,7 @@ export default function TutorPage() {
       const data = await tutorChat({ message, selectedLevelId: selectedLevel?.id, history });
       pushAssistant(data);
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Tutor chat failed.", "error");
+      showToast(error?.response?.data?.detail || "导师问答失败，请检查后端服务。", "error");
     } finally {
       setLoading(false);
     }
@@ -71,11 +71,11 @@ export default function TutorPage() {
     if (!selectedLevel) return;
     setLoadingAction("explain");
     try {
-      const data = await tutorExplain({ topic: selectedLevel.title, question: "Explain this level clearly.", selectedLevelId: selectedLevel.id });
+      const data = await tutorExplain({ topic: selectedLevel.title, question: "请清晰讲解这个关卡。", selectedLevelId: selectedLevel.id });
       pushAssistant(data);
-      showToast("Explanation generated.", "success");
+      showToast("关卡讲解已生成。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Explanation failed.", "error");
+      showToast(error?.response?.data?.detail || "关卡讲解失败。", "error");
     } finally {
       setLoadingAction("");
     }
@@ -87,9 +87,9 @@ export default function TutorPage() {
     try {
       const data = await tutorGenerateQuiz({ knowledge_point_id: selectedLevel.id, count: 5 });
       pushAssistant(data);
-      showToast("Quiz generated.", "success");
+      showToast("小测验已生成。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Quiz generation failed.", "error");
+      showToast(error?.response?.data?.detail || "生成小测验失败。", "error");
     } finally {
       setLoadingAction("");
     }
@@ -100,9 +100,9 @@ export default function TutorPage() {
     try {
       const data = await tutorExplainWrong({});
       pushAssistant(data);
-      showToast("Wrong question explained.", "success");
+      showToast("错题解析已生成。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Wrong question explanation failed.", "error");
+      showToast(error?.response?.data?.detail || "错题解析失败。", "error");
     } finally {
       setLoadingAction("");
     }
@@ -111,9 +111,9 @@ export default function TutorPage() {
   async function copyAnswer(text) {
     try {
       await navigator.clipboard.writeText(text);
-      showToast("Copied.", "success");
+      showToast("回答已复制。", "success");
     } catch (error) {
-      showToast("Browser did not allow clipboard access.", "error");
+      showToast("浏览器未允许复制，请手动选择文本复制。", "error");
     }
   }
 
@@ -126,14 +126,14 @@ export default function TutorPage() {
       target_id: selectedLevel?.id,
       metadata: { answer: message.content, mode: message.mode },
     });
-    showToast("Saved as interaction note.", "success");
+    showToast("已作为学习笔记记录到交互日志。", "success");
   }
 
   return (
     <PageContainer
       eyebrow="AI Tutor"
-      title="AI Tutor"
-      description="Unified AI Provider: local template mode works without API keys, and LLM mode activates when backend environment variables are configured."
+      title="AI 导师"
+      description="统一 AI Provider：没有 API Key 时使用本地模板和课程资料，有 Key 时自动启用豆包/兼容大模型。"
       actions={<AiModeBadge mode={lastMode} status={aiStatus} />}
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -144,12 +144,12 @@ export default function TutorPage() {
             <KnowledgePointSelect
               value={selectedLevel?.id}
               onChange={(id) => setSelectedLevel(learningMap.find((node) => node.id === id))}
-              label="Knowledge point"
+              label="知识点"
             />
             <div className="mt-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4">
-              <p className="text-xs uppercase text-cyan-200/60">Current Level</p>
-              <h2 className="mt-1 text-xl font-bold text-white">{selectedLevel?.title || "No level selected"}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "Choose a level to get targeted explanations."}</p>
+              <p className="text-xs uppercase text-cyan-200/60">当前关卡</p>
+              <h2 className="mt-1 text-xl font-bold text-white">{selectedLevel?.title || "尚未选择关卡"}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "请选择一个关卡，AI 导师会结合掌握度和资料进行讲解。"}</p>
             </div>
           </div>
 
@@ -157,27 +157,27 @@ export default function TutorPage() {
 
           <div className="glass-panel p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-white">Student State</h3>
+              <h3 className="font-semibold text-white">学生状态</h3>
               <AiModeBadge mode={aiStatus?.mode || lastMode} status={aiStatus} />
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">XP {dashboard?.student?.xp ?? 0}</div>
-              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">Lv.{dashboard?.student?.level ?? 1}</div>
-              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">Risk {dashboard?.stats?.learningRisk ?? 0}%</div>
-              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">Stress {dashboard?.stats?.stressLevel || "Medium"}</div>
+              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">等级 Lv.{dashboard?.student?.level ?? 1}</div>
+              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">风险 {dashboard?.stats?.learningRisk ?? 0}%</div>
+              <div className="rounded-2xl bg-white/[0.045] p-3 text-slate-300">压力 {dashboard?.stats?.stressLevel || "中等"}</div>
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-400">
-              Provider: {aiStatus?.provider || "local-template"} | Model: {aiStatus?.model || "local-template"}
+              Provider: {aiStatus?.provider || "local-template"} | 模型: {aiStatus?.model || "local-template"}
             </p>
           </div>
 
           <div className="glass-panel p-4">
-            <h3 className="mb-3 font-semibold text-white">Sources</h3>
+            <h3 className="mb-3 font-semibold text-white">来源资料</h3>
             <TutorSourceList sources={sources} />
           </div>
 
           <div className="glass-panel p-4">
-            <h3 className="mb-3 font-semibold text-white">Suggested Questions</h3>
+            <h3 className="mb-3 font-semibold text-white">推荐追问</h3>
             <SuggestedQuestions questions={suggested} onPick={setInput} />
           </div>
         </div>

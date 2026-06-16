@@ -13,12 +13,12 @@ export default function LearningMapPage() {
   return (
     <PageContainer
       eyebrow="Learning Map"
-      title="Learning Map"
-      description="Generated from the knowledge graph, mastery scores, prerequisites, and unlock rules."
+      title="学习闯关地图"
+      description="由知识图谱、掌握度、前置知识和解锁规则动态生成。"
       actions={
         <button type="button" onClick={() => navigate("/tutor")} className="action-button">
           <FlaskConical size={16} />
-          Generate Quiz
+          生成小测验
         </button>
       }
     >
@@ -27,10 +27,10 @@ export default function LearningMapPage() {
       <div className="glass-panel p-5">
         <div className="mb-2 flex items-center gap-2 text-emerald-100">
           <CheckCircle2 size={18} />
-          Current Level
+          当前关卡
         </div>
-        <h2 className="text-xl font-bold text-white">{selectedLevel?.title || "Select a level"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "Click a map node to inspect details and actions."}</p>
+        <h2 className="text-xl font-bold text-white">{selectedLevel?.title || "请选择关卡"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "点击地图节点查看详情和操作入口。"}</p>
       </div>
     </PageContainer>
   );

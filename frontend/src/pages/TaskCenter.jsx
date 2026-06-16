@@ -21,16 +21,16 @@ export default function TaskCenter() {
   return (
     <PageContainer
       eyebrow="Task Center"
-      title="Task Center"
-      description="Manage tasks, study records, emotion checkins, and wrong questions. Changes refresh dashboard, risk, and learning map data."
+      title="任务中心"
+      description="集中管理学习任务、学习记录、情绪打卡和错题记录。每次操作都会刷新驾驶舱、风险和学习地图数据。"
     >
       <div className="glass-panel p-4">
         <div className="mb-3 flex flex-wrap gap-2">
           {[
-            ["all", "All tasks"],
-            ["today", "Today"],
-            ["todo", "Todo"],
-            ["done", "Done"],
+            ["all", "全部任务"],
+            ["today", "今日任务"],
+            ["todo", "未完成"],
+            ["done", "已完成"],
           ].map(([key, label]) => (
             <button key={key} type="button" onClick={() => setFilter(key)} className={`action-button ${filter === key ? "border-cyan-200/60 bg-cyan-400/15" : ""}`}>
               {label}

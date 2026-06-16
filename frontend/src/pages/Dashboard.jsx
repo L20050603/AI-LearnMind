@@ -40,44 +40,44 @@ export default function Dashboard() {
   return (
     <PageContainer
       eyebrow="Dashboard"
-      title="Learning Cockpit"
-      description="Core metrics, recommended level, and fast entry points. Map, risk, agents, graph, and reports now live in separate pages."
+      title="学习驾驶舱"
+      description="这里只保留核心指标、推荐关卡和快捷入口。学习地图、风险诊断、Agent、知识图谱和报告已拆分到独立页面。"
       actions={
         <>
           <button type="button" onClick={() => navigate("/map")} className="action-button">
             <Map size={16} />
-            Open Map
+            进入学习地图
           </button>
           <button type="button" onClick={runAgentAnalysis} className="action-button">
             <Bot size={16} />
-            {running ? "Running..." : "Run Agents"}
+            {running ? "分析中..." : "运行 Agent 分析"}
           </button>
           <button type="button" onClick={() => navigate("/reports")} className="action-button">
             <FileText size={16} />
-            Weekly Report
+            生成周报
           </button>
         </>
       }
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Efficiency Score" value={stats.efficiencyScore ?? 0} />
-        <MetricCard label="Task Completion" value={stats.taskCompletion ?? 0} suffix="%" />
-        <MetricCard label="Learning Risk" value={stats.learningRisk ?? 0} suffix="%" tone="rose" />
-        <MetricCard label="Stress Level" value={stats.stressLevel || "Medium"} tone="violet" />
+        <MetricCard label="学习效率评分" value={stats.efficiencyScore ?? 0} />
+        <MetricCard label="今日任务完成率" value={stats.taskCompletion ?? 0} suffix="%" />
+        <MetricCard label="学习风险指数" value={stats.learningRisk ?? 0} suffix="%" tone="rose" />
+        <MetricCard label="当前压力等级" value={stats.stressLevel || "中等"} tone="violet" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
         <div className="glass-panel p-5">
           <div className="mb-3 flex items-center gap-2 text-cyan-100">
             <Sparkles size={18} />
-            Recommended Level
+            推荐关卡
           </div>
-          <h2 className="text-2xl font-bold text-white">{recommended?.title || "No recommendation"}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">{recommended?.strategy || "Create records to get a personalized recommendation."}</p>
+          <h2 className="text-2xl font-bold text-white">{recommended?.title || "暂无推荐"}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">{recommended?.strategy || "添加学习记录后，系统会生成个性化推荐。"}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">Mastery {recommended?.mastery ?? 0}%</div>
-            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">Weight {recommended?.exam_weight ?? 0}%</div>
-            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">Time {recommended?.estimated_minutes ?? 0} min</div>
+            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">掌握度 {recommended?.mastery ?? 0}%</div>
+            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">考试权重 {recommended?.exam_weight ?? 0}%</div>
+            <div className="rounded-2xl bg-white/[0.045] p-3 text-sm text-slate-300">预计 {recommended?.estimated_minutes ?? 0} min</div>
           </div>
           <div className="mt-4">
             <LevelActionBar level={recommended} compact />
@@ -87,7 +87,7 @@ export default function Dashboard() {
         <div className="glass-panel p-5">
           <div className="mb-3 flex items-center gap-2 text-emerald-100">
             <Route size={18} />
-            Today Path
+            今日学习路径
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {(todayPath?.steps || []).map((step, index) => (
@@ -104,7 +104,7 @@ export default function Dashboard() {
                 <p className="text-xs text-violet-100">Step {index + 1}</p>
                 <h3 className="mt-1 text-sm font-semibold text-white">{step.title}</h3>
                 <p className="mt-2 text-xs text-slate-400">
-                  {step.minutes} min | priority {step.priority}
+                  {step.minutes} min | 优先级 {step.priority}
                 </p>
               </button>
             ))}
@@ -113,7 +113,7 @@ export default function Dashboard() {
             <div className="mt-4 rounded-3xl border border-rose-200/15 bg-rose-400/8 p-4">
               <div className="mb-1 flex items-center gap-2 text-rose-100">
                 <ShieldAlert size={16} />
-                Agent Decision
+                Agent 综合判断
               </div>
               <p className="text-sm leading-6 text-slate-200">{agentRun.final_advice.decision}</p>
             </div>

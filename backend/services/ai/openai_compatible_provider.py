@@ -13,22 +13,39 @@ class OpenAICompatibleProvider(AIProvider):
     mode = "llm"
 
     def __init__(self):
-        self.api_key = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or ""
-        self.base_url = os.getenv("LLM_API_BASE_URL") or "https://api.openai.com/v1"
-        self.api_url = os.getenv("LLM_API_URL") or f"{self.base_url.rstrip('/')}/chat/completions"
-        self.model = os.getenv("LLM_MODEL") or "gpt-4o-mini"
+        self.api_key = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("DOUBAO_API_KEY") or os.getenv("ARK_API_KEY") or ""
+        self.api_url = os.getenv("LLM_API_URL") or os.getenv("DOUBAO_TEXT_ENDPOINT") or ""
+        self.base_url = os.getenv("LLM_API_BASE_URL") or self._base_url_from_endpoint(self.api_url) or "https://api.openai.com/v1"
+        self.api_url = self.api_url or f"{self.base_url.rstrip('/')}/chat/completions"
+        self.model = os.getenv("LLM_MODEL") or os.getenv("DOUBAO_TEXT_MODEL") or "gpt-4o-mini"
         self.temperature = float(os.getenv("LLM_TEMPERATURE") or "0.3")
+
+    def _base_url_from_endpoint(self, endpoint: str):
+        if not endpoint:
+            return None
+        if "/responses" in endpoint:
+            return endpoint.split("/responses")[0]
+        if "/chat/completions" in endpoint:
+            return endpoint.split("/chat/completions")[0]
+        return None
 
     def chat(self, messages: list[dict], temperature: float = 0.3) -> str:
         if not self.api_key:
             raise RuntimeError("LLM API key is not configured")
-        payload = json.dumps(
-            {
+        if self.api_url.rstrip("/").endswith("/responses"):
+            user_text = "\n\n".join(f"{item.get('role', 'user')}: {item.get('content', '')}" for item in messages)
+            payload_data = {
+                "model": self.model,
+                "input": user_text,
+                "temperature": temperature if temperature is not None else self.temperature,
+            }
+        else:
+            payload_data = {
                 "model": self.model,
                 "messages": messages,
                 "temperature": temperature if temperature is not None else self.temperature,
             }
-        ).encode("utf-8")
+        payload = json.dumps(payload_data, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(
             self.api_url,
             data=payload,
@@ -40,10 +57,25 @@ class OpenAICompatibleProvider(AIProvider):
                 data = json.loads(response.read().decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise RuntimeError(f"LLM request failed: {exc}") from exc
+        text = self._extract_text(data)
+        if not text:
+            raise RuntimeError("LLM response did not contain a message")
+        return text
+
+    def _extract_text(self, data: dict) -> str:
+        if data.get("output_text"):
+            return data["output_text"]
         try:
             return data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError("LLM response did not contain a message") from exc
+        except (KeyError, IndexError, TypeError):
+            pass
+        chunks = []
+        for item in data.get("output", []) or []:
+            for content in item.get("content", []) or []:
+                text = content.get("text") or content.get("value")
+                if text:
+                    chunks.append(text)
+        return "\n".join(chunks).strip()
 
     def explain_topic(self, topic: str, context: dict) -> dict:
         text = self.chat(

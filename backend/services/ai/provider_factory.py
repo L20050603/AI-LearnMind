@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from services.ai.ai_provider import AIProvider
 from services.ai.local_template_provider import LocalTemplateProvider
@@ -44,11 +45,28 @@ class FallbackAIProvider(AIProvider):
         return self._call("generate_weekly_report", data)
 
 
+def load_backend_env():
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def has_llm_key():
-    return bool(os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY"))
+    load_backend_env()
+    return bool(os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("DOUBAO_API_KEY") or os.getenv("ARK_API_KEY"))
 
 
 def get_ai_provider():
+    load_backend_env()
     local = LocalTemplateProvider()
     if has_llm_key():
         return FallbackAIProvider(OpenAICompatibleProvider(), local)
@@ -56,6 +74,7 @@ def get_ai_provider():
 
 
 def get_ai_status():
+    load_backend_env()
     if has_llm_key():
         provider = OpenAICompatibleProvider()
         return {

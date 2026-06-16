@@ -55,7 +55,7 @@ export function AppDataProvider({ children }) {
       });
       setError("");
     } catch (err) {
-      setError("Cannot connect to FastAPI. Please start the backend at http://localhost:8000.");
+      setError("无法连接 FastAPI，请先启动后端服务：http://localhost:8000。");
     } finally {
       setLoading(false);
     }

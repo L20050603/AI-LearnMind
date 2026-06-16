@@ -23,25 +23,25 @@ function ShellContent({ children }) {
               {loading && (
                 <SystemState
                   type="loading"
-                  title="Loading learning workspace"
-                  description="Reading data, recalculating risk, planning paths, and preparing the agent workspace."
+                  title="正在载入学习空间"
+                  description="正在读取数据、重新计算风险、规划路径并准备 Agent 工作区。"
                 />
               )}
               {!loading && error && (
                 <SystemState
                   type="error"
-                  title="Backend connection failed"
+                  title="后端连接失败"
                   description={error}
-                  actionLabel="Reconnect"
+                  actionLabel="重新连接"
                   onAction={() => refreshAll({ showLoading: true })}
                 />
               )}
               {!loading && !error && learningMap.length === 0 && (
                 <SystemState
                   type="empty"
-                  title="No learning data"
-                  description="Run python seed.py in the backend folder to initialize demo data."
-                  actionLabel="Refresh"
+                  title="暂无学习数据"
+                  description="请在 backend 目录运行 python seed.py 初始化演示数据。"
+                  actionLabel="刷新数据"
                   onAction={() => refreshAll({ showLoading: true })}
                 />
               )}

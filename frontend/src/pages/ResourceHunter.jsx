@@ -17,31 +17,31 @@ export default function ResourceHunter() {
     if (!selectedLevel) return;
     setBusy(true);
     try {
-      const result = await explainTopic(selectedLevel.title, "recommend learning resources");
+      const result = await explainTopic(selectedLevel.title, "推荐学习资源");
       setSources(result.sources || []);
       await logInteraction({ type: "resource", name: "search_resource", action: "search", page: "ResourceHunter", target_id: selectedLevel.id });
-      showToast("Resources loaded.", "success");
+      showToast("已检索相关学习资源。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Resource search failed.", "error");
+      showToast(error?.response?.data?.detail || "资源检索失败。", "error");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <PageContainer eyebrow="Resource Hunter" title="Resource Hunter" description="Search local course resources for the selected level.">
+    <PageContainer eyebrow="Resource Hunter" title="资源猎手" description="根据当前关卡检索本地课程资料和相关知识点。">
       <div className="glass-panel p-5">
         <KnowledgePointSelect
           value={selectedLevel?.id}
           onChange={(id) => setSelectedLevel(learningMap.find((node) => node.id === id))}
-          label="Knowledge point"
+          label="知识点"
         />
-        <p className="mt-4 text-sm text-slate-400">Current Level</p>
-        <h2 className="mt-1 text-2xl font-bold text-white">{selectedLevel?.title || "No level selected"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "Select a map level first."}</p>
+        <p className="mt-4 text-sm text-slate-400">当前关卡</p>
+        <h2 className="mt-1 text-2xl font-bold text-white">{selectedLevel?.title || "尚未选择关卡"}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "请先在学习地图选择一个关卡。"}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button type="button" onClick={searchResources} disabled={busy || !selectedLevel} className="action-button">
-            {busy ? "Searching..." : "Search Resources"}
+            {busy ? "检索中..." : "查询资源"}
           </button>
           <LevelActionBar level={selectedLevel} compact />
         </div>

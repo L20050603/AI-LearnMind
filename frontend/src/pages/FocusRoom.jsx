@@ -26,30 +26,30 @@ export default function FocusRoom() {
         note: `Focus started: ${selectedLevel.title}`,
       });
       await refreshAll();
-      showToast("Focus session started and a study record was created.", "success");
+      showToast("专注学习已开始，并写入一条学习记录。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "Failed to start focus session.", "error");
+      showToast(error?.response?.data?.detail || "开始专注失败。", "error");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <PageContainer eyebrow="Focus Room" title="Focus Room" description="Start a focused study session for the selected level and write it back as a real study record.">
+    <PageContainer eyebrow="Focus Room" title="专注学习空间" description="围绕当前关卡启动专注学习，并真实写入学习记录。">
       <div className="glass-panel p-6 text-center">
         <div className="mx-auto max-w-md text-left">
           <KnowledgePointSelect
             value={selectedLevel?.id}
             onChange={(id) => setSelectedLevel(learningMap.find((node) => node.id === id))}
-            label="Focus knowledge point"
+            label="专注知识点"
           />
         </div>
-        <p className="mt-4 text-sm text-slate-400">Current Focus Target</p>
-        <h2 className="mt-2 text-3xl font-black text-white">{selectedLevel?.title || "Select a level"}</h2>
-        <p className="mt-3 text-sm text-slate-300">Suggested duration: {selectedLevel?.estimated_minutes || 25} minutes</p>
+        <p className="mt-4 text-sm text-slate-400">当前专注目标</p>
+        <h2 className="mt-2 text-3xl font-black text-white">{selectedLevel?.title || "请选择关卡"}</h2>
+        <p className="mt-3 text-sm text-slate-300">建议时长：{selectedLevel?.estimated_minutes || 25} 分钟</p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button type="button" onClick={startFocus} disabled={busy || !selectedLevel} className="primary-submit max-w-xs">
-            {busy ? "Starting..." : "Start Focus"}
+            {busy ? "启动中..." : "开始专注"}
           </button>
           <LevelActionBar level={selectedLevel} compact />
         </div>

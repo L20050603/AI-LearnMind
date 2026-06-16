@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 360px;
+  background: #050814;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #050814;
+  font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@layer components {
+  .glass-panel {
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 24px;
+    background:
+      linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.38)),
+      rgba(2, 6, 23, 0.62);
+    box-shadow: 0 22px 80px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(20px);
+  }
+
+  .neon-border {
+    position: relative;
+  }
+
+  .neon-border::before {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(110deg, rgba(34, 211, 238, 0.8), rgba(168, 85, 247, 0.68), rgba(244, 63, 94, 0.46));
+    content: "";
+    filter: blur(8px);
+    opacity: 0.45;
+  }
+
+  .nav-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.52);
+    padding: 0 12px;
+    color: rgba(241, 245, 249, 0.92);
+    white-space: nowrap;
+  }
+}
+
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 85, 247, 0.09) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black, transparent 76%);
+}
+
+.particle-dot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(125, 249, 255, 0.85);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.9);
+  animation: float-particle 9s linear infinite;
+}
+
+.typing-caret {
+  color: #22d3ee;
+  animation: blink 0.9s step-end infinite;
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.7);
+    opacity: 0.1;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(42px, -110px, 0) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.08);
+    filter: brightness(1.26);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-breathe {
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
+@media (max-width: 900px) {
+  .nav-chip {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+}

@@ -199,3 +199,20 @@ class QuizAttempt(Base):
     answers_json = Column(Text, default="{}")
     xp_gained = Column(Integer, default=0)
     created_at = Column(DateTime, default=utc_now)
+
+
+class FocusSession(Base):
+    __tablename__ = "focus_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
+    knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), index=True)
+    task_id = Column(Integer, ForeignKey("learning_tasks.id"), nullable=True)
+    start_time = Column(DateTime, default=utc_now)
+    end_time = Column(DateTime, nullable=True)
+    planned_minutes = Column(Integer, default=25)
+    actual_minutes = Column(Integer, default=0)
+    status = Column(String, default="running")
+    source = Column(String, default="manual")
+    xp_gained = Column(Integer, default=0)
+    created_at = Column(DateTime, default=utc_now)

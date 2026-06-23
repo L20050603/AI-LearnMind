@@ -59,3 +59,13 @@ export const evaluateRisk = (payload = {}) => api.post("/api/risk/evaluate", pay
 export const completeLevel = (id, payload) => api.post(`/api/levels/${id}/complete`, payload).then((res) => res.data);
 export const logInteraction = (payload) => api.post("/api/interactions/events", payload).then((res) => res.data);
 export const getInteractions = () => api.get("/api/interactions/events").then((res) => res.data);
+
+export const startFocus = (payload) => api.post("/api/focus/start", payload).then((res) => res.data);
+export const pauseFocus = (id) => api.post(`/api/focus/${id}/pause`).then((res) => res.data);
+export const resumeFocus = (id) => api.post(`/api/focus/${id}/resume`).then((res) => res.data);
+export const finishFocus = (id) => api.post(`/api/focus/${id}/finish`).then((res) => res.data);
+export const cancelFocus = (id) => api.post(`/api/focus/${id}/cancel`).then((res) => res.data);
+export const getCurrentFocus = () => api.get("/api/focus/current").then((res) => res.data);
+export const getFocusStats = () => api.get("/api/focus/stats").then((res) => res.data);
+
+export const parseVoiceIntent = (payload) => api.post("/api/voice/intent", payload).then((res) => res.data);

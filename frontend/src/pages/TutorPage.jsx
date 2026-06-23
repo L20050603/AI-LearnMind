@@ -41,6 +41,18 @@ export default function TutorPage() {
       .catch(() => setAiStatus({ configured: false, provider: "local-template", mode: "local", model: "local-template" }));
   }, []);
 
+  useEffect(() => {
+    const cached = sessionStorage.getItem("voiceTutorResult");
+    if (!cached) return;
+    try {
+      pushAssistant(JSON.parse(cached));
+      sessionStorage.removeItem("voiceTutorResult");
+      showToast("已载入语音命令生成的关卡讲解。", "success");
+    } catch {
+      sessionStorage.removeItem("voiceTutorResult");
+    }
+  }, []);
+
   function pushAssistant(data) {
     const content = data.answer || data.reply || "后端没有返回有效回答。";
     setMessages((items) => [...items, { role: "assistant", content, mode: data.mode || "local", sources: data.sources || [] }]);

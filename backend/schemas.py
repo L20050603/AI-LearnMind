@@ -156,6 +156,19 @@ class QuizSubmitPayload(BaseModel):
     answers: dict[str, str] = Field(default_factory=dict)
 
 
+class FocusStartPayload(BaseModel):
+    knowledgePointId: int
+    taskId: int | None = None
+    plannedMinutes: int = Field(default=25, ge=1, le=180)
+    source: str = "manual"
+
+
+class VoiceIntentPayload(BaseModel):
+    text: str
+    currentPage: str = ""
+    selectedLevelId: int | None = None
+
+
 class TaskCreate(BaseModel):
     title: str
     knowledge_point_id: int

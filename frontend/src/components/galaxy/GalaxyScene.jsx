@@ -1,30 +1,55 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import KnowledgeStar from "./KnowledgeStar.jsx";
 import StarLink from "./StarLink.jsx";
 
-function CameraRig({ focusNode }) {
+function CameraRig({ flyTarget }) {
   const controlsRef = useRef();
   const { camera } = useThree();
   const desiredPosition = useMemo(() => new THREE.Vector3(), []);
   const desiredTarget = useMemo(() => new THREE.Vector3(), []);
+  const flyingRef = useRef(false);
+
+  useEffect(() => {
+    if (!flyTarget) return;
+    desiredTarget.set(flyTarget.x, flyTarget.y, flyTarget.z);
+    desiredPosition.set(flyTarget.x + 6.5, flyTarget.y + 4.2, flyTarget.z + 8.5);
+    flyingRef.current = true;
+  }, [flyTarget?.id, flyTarget?.nonce, desiredPosition, desiredTarget]);
 
   useFrame(() => {
-    if (!focusNode || !controlsRef.current) return;
-    desiredTarget.set(focusNode.x, focusNode.y, focusNode.z);
-    desiredPosition.set(focusNode.x + 6.5, focusNode.y + 4.2, focusNode.z + 8.5);
-    camera.position.lerp(desiredPosition, 0.045);
-    controlsRef.current.target.lerp(desiredTarget, 0.055);
+    if (!flyingRef.current || !controlsRef.current) return;
+    camera.position.lerp(desiredPosition, 0.085);
+    controlsRef.current.target.lerp(desiredTarget, 0.105);
     controlsRef.current.update();
+    if (camera.position.distanceTo(desiredPosition) < 0.08 && controlsRef.current.target.distanceTo(desiredTarget) < 0.08) {
+      flyingRef.current = false;
+    }
   });
 
-  return <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.08} minDistance={5} maxDistance={42} />;
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      makeDefault
+      enableDamping
+      dampingFactor={0.08}
+      enableRotate
+      enableZoom
+      enablePan
+      screenSpacePanning
+      rotateSpeed={0.65}
+      zoomSpeed={0.8}
+      panSpeed={0.75}
+      minDistance={4}
+      maxDistance={56}
+    />
+  );
 }
 
-export default function GalaxyScene({ nodes, links, selectedNode, focusNode, filter, onSelectNode }) {
+export default function GalaxyScene({ nodes, links, selectedNode, flyTarget, filter, onSelectNode }) {
   const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
 
   function matchesFilter(node) {
@@ -61,7 +86,7 @@ export default function GalaxyScene({ nodes, links, selectedNode, focusNode, fil
         />
       ))}
 
-      <CameraRig focusNode={focusNode} />
+      <CameraRig flyTarget={flyTarget} />
     </>
   );
 }

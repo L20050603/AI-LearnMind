@@ -31,7 +31,10 @@ def create_quiz(db, knowledge_point_id: int, source_type="level", source_id=None
     quiz = Quiz(user_id=user_id, knowledge_point_id=knowledge_point_id, title=title, source_type=source_type, source_id=source_id)
     db.add(quiz)
     db.flush()
-    questions, mode = generate_questions(db, knowledge_point_id, count, user_id)
+    if source_type == "galaxy":
+        questions, mode = local_questions(knowledge_point_id, count), "local-galaxy"
+    else:
+        questions, mode = generate_questions(db, knowledge_point_id, count, user_id)
     for item in questions:
         db.add(
             QuizQuestion(

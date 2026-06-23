@@ -1,4 +1,5 @@
 import { BookOpen, CheckCircle2, FileQuestion, Focus, Search } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { completeLevel, generateQuiz } from "../../api/client.js";
@@ -7,10 +8,11 @@ import { useToast } from "../common/ToastProvider.jsx";
 export default function GalaxySidePanel({ node, onClose, onCompleted, setSelectedLevel }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [busy, setBusy] = useState("");
 
   if (!node) {
     return (
-      <aside className="pointer-events-auto w-full rounded-3xl border border-white/10 bg-slate-950/78 p-5 backdrop-blur-xl xl:w-[360px]">
+      <aside className="w-full rounded-3xl border border-white/10 bg-slate-950/78 p-5 backdrop-blur-xl">
         <p className="text-sm uppercase tracking-[0.24em] text-cyan-200/60">Knowledge Star</p>
         <h2 className="mt-3 text-2xl font-black text-white">选择一颗知识星体</h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">点击星体后，这里会显示掌握度、风险、前置知识、资源和 Quiz 数据。</p>
@@ -24,17 +26,25 @@ export default function GalaxySidePanel({ node, onClose, onCompleted, setSelecte
   }
 
   async function handleQuiz() {
+    setBusy("quiz");
     try {
+      setSelectedLevel?.(node);
       const result = await generateQuiz({ knowledgePointId: node.id, sourceType: "galaxy", sourceId: node.id, count: 5 });
       showToast("星图测验已生成。", "success");
-      navigate(`/quiz/${result.quiz?.id}`);
+      const quizId = result.quiz?.id || result.quizId;
+      if (quizId) navigate(`/quiz/${quizId}`);
+      else showToast("测验已生成，但后端没有返回 quizId。", "error");
     } catch (error) {
       showToast(error?.response?.data?.detail || "生成 Quiz 失败。", "error");
+    } finally {
+      setBusy("");
     }
   }
 
   async function handleComplete() {
+    setBusy("complete");
     try {
+      setSelectedLevel?.(node);
       const result = await completeLevel(node.id, {
         study_minutes: Math.min(node.estimated_minutes || 30, node.type === "boss" ? 60 : 45),
         correct_count: node.type === "boss" ? 6 : 8,
@@ -45,17 +55,23 @@ export default function GalaxySidePanel({ node, onClose, onCompleted, setSelecte
       await onCompleted?.();
     } catch (error) {
       showToast(error?.response?.data?.detail || "完成关卡失败。", "error");
+    } finally {
+      setBusy("");
     }
   }
 
   return (
-    <aside className="pointer-events-auto w-full rounded-3xl border border-white/10 bg-slate-950/82 p-5 shadow-[0_0_52px_rgba(124,58,237,.18)] backdrop-blur-xl xl:w-[380px]">
+    <aside className="w-full rounded-3xl border border-white/10 bg-slate-950/82 p-5 shadow-[0_0_52px_rgba(124,58,237,.18)] backdrop-blur-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/60">{node.course} · {node.chapter}</p>
+          <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/60">
+            {node.course} · {node.chapter}
+          </p>
           <h2 className="mt-2 text-2xl font-black text-white">{node.title}</h2>
         </div>
-        <button type="button" onClick={onClose} className="icon-action">×</button>
+        <button type="button" onClick={onClose} className="icon-action" title="关闭详情">
+          ×
+        </button>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-2">
@@ -92,11 +108,21 @@ export default function GalaxySidePanel({ node, onClose, onCompleted, setSelecte
       </div>
 
       <div className="mt-5 grid gap-2">
-        <button type="button" onClick={() => go("/tutor")} className="action-button justify-center"><BookOpen size={15} /> AI 讲解</button>
-        <button type="button" onClick={() => go("/resources")} className="action-button justify-center"><Search size={15} /> 查找资源</button>
-        <button type="button" onClick={handleQuiz} className="action-button justify-center"><FileQuestion size={15} /> 生成 Quiz</button>
-        <button type="button" onClick={() => go("/focus")} className="action-button justify-center"><Focus size={15} /> 开始专注</button>
-        <button type="button" onClick={handleComplete} className="primary-submit justify-center"><CheckCircle2 size={15} /> 完成关卡</button>
+        <button type="button" onClick={() => go("/tutor")} disabled={!!busy} className="action-button justify-center disabled:opacity-60">
+          <BookOpen size={15} /> AI 讲解
+        </button>
+        <button type="button" onClick={() => go("/resources")} disabled={!!busy} className="action-button justify-center disabled:opacity-60">
+          <Search size={15} /> 查找资源
+        </button>
+        <button type="button" onClick={handleQuiz} disabled={!!busy} className="action-button justify-center disabled:opacity-60">
+          <FileQuestion size={15} /> {busy === "quiz" ? "生成中..." : "生成 Quiz"}
+        </button>
+        <button type="button" onClick={() => go("/focus")} disabled={!!busy} className="action-button justify-center disabled:opacity-60">
+          <Focus size={15} /> 开始专注
+        </button>
+        <button type="button" onClick={handleComplete} disabled={!!busy} className="primary-submit justify-center disabled:opacity-60">
+          <CheckCircle2 size={15} /> {busy === "complete" ? "完成中..." : "完成关卡"}
+        </button>
       </div>
     </aside>
   );

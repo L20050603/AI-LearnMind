@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import GalaxyScene from "./GalaxyScene.jsx";
 
-export default function KnowledgeGalaxyCanvas({ nodes, links, selectedNode, focusNode, filter, onSelectNode, onError }) {
+export default function KnowledgeGalaxyCanvas({ nodes, links, selectedNode, flyTarget, filter, onSelectNode, onError }) {
   return (
     <div className="absolute inset-0">
       <Canvas
@@ -16,7 +16,7 @@ export default function KnowledgeGalaxyCanvas({ nodes, links, selectedNode, focu
         onError={(error) => onError?.(error?.message || "Canvas render error")}
       >
         <Suspense fallback={null}>
-          <GalaxyScene nodes={nodes} links={links} selectedNode={selectedNode} focusNode={focusNode} filter={filter} onSelectNode={onSelectNode} />
+          <GalaxyScene nodes={nodes} links={links} selectedNode={selectedNode} flyTarget={flyTarget} filter={filter} onSelectNode={onSelectNode} />
         </Suspense>
       </Canvas>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { getAiStatus, logInteraction, tutorChat, tutorExplain, tutorExplainWrong, tutorGenerateQuiz } from "../api/client.js";
+import { generateQuiz, getAiStatus, logInteraction, tutorChat, tutorExplain, tutorExplainWrong } from "../api/client.js";
 import KnowledgePointSelect from "../components/common/KnowledgePointSelect.jsx";
 import { useToast } from "../components/common/ToastProvider.jsx";
 import AiModeBadge from "../components/tutor/AiModeBadge.jsx";
@@ -13,11 +14,12 @@ import PageContainer from "../layouts/PageContainer.jsx";
 
 const introMessage = {
   role: "assistant",
-  content: "我已经准备好了。你可以问我当前关卡、让生成小测验，或者让我解释最近错题。",
+  content: "我已经准备好了。你可以让我讲解当前关卡、生成可评分小测验，或者解析最近错题。",
   mode: "local",
 };
 
 export default function TutorPage() {
+  const navigate = useNavigate();
   const { dashboard, selectedLevel, setSelectedLevel, learningMap } = useAppData();
   const { showToast } = useToast();
   const [aiStatus, setAiStatus] = useState(null);
@@ -25,7 +27,6 @@ export default function TutorPage() {
   const [input, setInput] = useState("");
   const [sources, setSources] = useState([]);
   const [suggested, setSuggested] = useState([]);
-  const [quiz, setQuiz] = useState([]);
   const [lastMode, setLastMode] = useState("local");
   const [loading, setLoading] = useState(false);
   const [loadingAction, setLoadingAction] = useState("");
@@ -59,7 +60,6 @@ export default function TutorPage() {
     setSources(data.sources || []);
     setSuggested(data.suggestedQuestions || []);
     setLastMode(data.mode || "local");
-    if (data.quiz) setQuiz(data.quiz);
   }
 
   async function submitQuestion(event) {
@@ -93,13 +93,18 @@ export default function TutorPage() {
     }
   }
 
-  async function generateQuiz() {
+  async function generateCurrentQuiz() {
     if (!selectedLevel) return;
     setLoadingAction("quiz");
     try {
-      const data = await tutorGenerateQuiz({ knowledge_point_id: selectedLevel.id, count: 5 });
-      pushAssistant(data);
-      showToast("小测验已生成。", "success");
+      const data = await generateQuiz({
+        knowledgePointId: selectedLevel.id,
+        sourceType: "tutor",
+        sourceId: selectedLevel.id,
+        count: 5,
+      });
+      showToast("小测验已生成，正在进入答题页。", "success");
+      navigate(`/quiz/${data.quiz?.id}`);
     } catch (error) {
       showToast(error?.response?.data?.detail || "生成小测验失败。", "error");
     } finally {
@@ -124,7 +129,7 @@ export default function TutorPage() {
     try {
       await navigator.clipboard.writeText(text);
       showToast("回答已复制。", "success");
-    } catch (error) {
+    } catch {
       showToast("浏览器未允许复制，请手动选择文本复制。", "error");
     }
   }
@@ -145,7 +150,7 @@ export default function TutorPage() {
     <PageContainer
       eyebrow="AI 导师"
       title="AI 导师"
-      description="统一 AI Provider：没有 API Key 时使用本地模板和课程资料，有 Key 时自动启用豆包/兼容大模型。"
+      description="没有 API Key 时使用本地模板和课程资料；配置 API Key 后自动启用大模型增强回答。"
       actions={<AiModeBadge mode={lastMode} status={aiStatus} />}
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -161,11 +166,13 @@ export default function TutorPage() {
             <div className="mt-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4">
               <p className="text-xs uppercase text-cyan-200/60">当前关卡</p>
               <h2 className="mt-1 text-xl font-bold text-white">{selectedLevel?.title || "尚未选择关卡"}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "请选择一个关卡，AI 导师会结合掌握度和资料进行讲解。"}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                {selectedLevel?.strategy || "请选择一个关卡，AI 导师会结合掌握度和资料进行讲解。"}
+              </p>
             </div>
           </div>
 
-          <TutorActionPanel onExplain={explainCurrentLevel} onQuiz={generateQuiz} onWrong={explainWrong} loadingAction={loadingAction} quiz={quiz} />
+          <TutorActionPanel onExplain={explainCurrentLevel} onQuiz={generateCurrentQuiz} onWrong={explainWrong} loadingAction={loadingAction} />
 
           <div className="glass-panel p-4">
             <div className="mb-3 flex items-center justify-between gap-3">

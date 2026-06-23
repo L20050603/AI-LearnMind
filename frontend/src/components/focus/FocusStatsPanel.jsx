@@ -20,8 +20,12 @@ export default function FocusStatsPanel({ stats }) {
       <div className="mt-4 space-y-2">
         {(stats?.recent || []).slice(0, 4).map((item) => (
           <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-950/50 px-3 py-2 text-xs text-slate-300">
-            <span>#{item.id} · {item.status}</span>
-            <span>{item.actual_minutes || item.planned_minutes} 分钟 · {item.xp_gained} XP</span>
+            <span>
+              #{item.id} · {item.status}
+            </span>
+            <span>
+              {item.actual_minutes || item.planned_minutes} 分钟 · {item.xp_gained} XP
+            </span>
           </div>
         ))}
       </div>

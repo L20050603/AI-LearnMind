@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { cancelFocus, finishFocus, getCurrentFocus, getFocusStats, pauseFocus, resumeFocus, startFocus } from "../api/client.js";
+import { useToast } from "../components/common/ToastProvider.jsx";
 import FocusBreathingAnimation from "../components/focus/FocusBreathingAnimation.jsx";
 import FocusCompletionModal from "../components/focus/FocusCompletionModal.jsx";
 import FocusControlPanel from "../components/focus/FocusControlPanel.jsx";
 import FocusStatsPanel from "../components/focus/FocusStatsPanel.jsx";
 import FocusTimer from "../components/focus/FocusTimer.jsx";
-import { useToast } from "../components/common/ToastProvider.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 function secondsFromSession(session) {
   if (!session) return 25 * 60;
   const planned = (session.planned_minutes || 25) * 60;
-  if (session.status === "paused") return Math.max(0, planned);
+  if (session.status === "paused") return planned;
   const started = session.start_time ? new Date(session.start_time).getTime() : Date.now();
   const elapsed = Math.max(0, Math.floor((Date.now() - started) / 1000));
   return Math.max(0, planned - elapsed);
@@ -30,7 +30,10 @@ export default function FocusRoom() {
   const [busy, setBusy] = useState(false);
   const [completion, setCompletion] = useState(null);
 
-  const sessionLevel = useMemo(() => learningMap.find((node) => node.id === session?.knowledge_point_id), [learningMap, session]);
+  const sessionLevel = useMemo(
+    () => learningMap.find((node) => node.id === session?.knowledge_point_id),
+    [learningMap, session?.knowledge_point_id],
+  );
 
   async function loadFocusState() {
     const [current, statData] = await Promise.all([getCurrentFocus(), getFocusStats()]);
@@ -64,7 +67,10 @@ export default function FocusRoom() {
   }, [session?.id, session?.status]);
 
   async function handleStart() {
-    if (!selectedLevel) return;
+    if (!selectedLevel) {
+      showToast("请先选择一个知识点。", "error");
+      return;
+    }
     setBusy(true);
     try {
       const data = await startFocus({
@@ -87,7 +93,8 @@ export default function FocusRoom() {
     if (!session) return;
     setBusy(true);
     try {
-      setSession(await pauseFocus(session.id));
+      const data = await pauseFocus(session.id);
+      setSession(data);
       showToast("专注已暂停。", "success");
     } catch (error) {
       showToast(error?.response?.data?.detail || "暂停失败。", "error");
@@ -100,7 +107,8 @@ export default function FocusRoom() {
     if (!session) return;
     setBusy(true);
     try {
-      setSession(await resumeFocus(session.id));
+      const data = await resumeFocus(session.id);
+      setSession(data);
       showToast("继续专注。", "success");
     } catch (error) {
       showToast(error?.response?.data?.detail || "继续失败。", "error");
@@ -110,7 +118,7 @@ export default function FocusRoom() {
   }
 
   async function handleFinish() {
-    if (!session) return;
+    if (!session || busy) return;
     setBusy(true);
     try {
       const result = await finishFocus(session.id);
@@ -142,7 +150,11 @@ export default function FocusRoom() {
   }
 
   return (
-    <PageContainer eyebrow="专注空间" title="专注学习空间" description="建立真实 FocusSession，会话完成后写入学习记录、增加 XP，并刷新掌握度、风险和学习地图。">
+    <PageContainer
+      eyebrow="专注空间"
+      title="专注学习空间"
+      description="建立真实 FocusSession；完成后写入学习记录、增加 XP，并刷新掌握度、风险和学习地图。"
+    >
       <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)_320px]">
         <FocusControlPanel
           selectedLevel={sessionLevel || selectedLevel}
@@ -171,6 +183,7 @@ export default function FocusRoom() {
           <FocusStatsPanel stats={stats} />
         </div>
       </div>
+
       <FocusCompletionModal result={completion} onClose={() => setCompletion(null)} />
     </PageContainer>
   );

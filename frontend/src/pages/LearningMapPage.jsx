@@ -1,5 +1,4 @@
-import { useNavigate } from "react-router-dom";
-import { CheckCircle2, FlaskConical } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import LevelActionBar from "../components/LevelActionBar.jsx";
 import LearningMap from "../components/LearningMap.jsx";
@@ -7,7 +6,6 @@ import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 export default function LearningMapPage() {
-  const navigate = useNavigate();
   const { learningMap, selectedLevel, setSelectedLevel, todayPath } = useAppData();
 
   return (
@@ -15,12 +13,6 @@ export default function LearningMapPage() {
       eyebrow="学习闯关地图"
       title="学习闯关地图"
       description="由知识图谱、掌握度、前置知识和解锁规则动态生成。"
-      actions={
-        <button type="button" onClick={() => navigate("/tutor")} className="action-button">
-          <FlaskConical size={16} />
-          生成小测验
-        </button>
-      }
     >
       <LearningMap nodes={learningMap} selectedNode={selectedLevel} onSelectNode={setSelectedLevel} todayPath={todayPath} />
       <LevelActionBar level={selectedLevel} />
@@ -30,7 +22,9 @@ export default function LearningMapPage() {
           当前关卡
         </div>
         <h2 className="text-xl font-bold text-white">{selectedLevel?.title || "请选择关卡"}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{selectedLevel?.strategy || "点击地图节点查看详情和操作入口。"}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          {selectedLevel?.strategy || "点击地图节点查看详情，然后查找资源、生成测验或开始专注学习。"}
+        </p>
       </div>
     </PageContainer>
   );

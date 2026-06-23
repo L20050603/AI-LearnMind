@@ -7,6 +7,12 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
+function statusText(status) {
+  if (status === "running") return "专注进行中";
+  if (status === "paused") return "已暂停";
+  return "准备开始";
+}
+
 export default function FocusTimer({ remainingSeconds, plannedMinutes, status }) {
   const total = Math.max(1, plannedMinutes * 60);
   const progress = Math.min(100, Math.max(0, ((total - remainingSeconds) / total) * 100));
@@ -24,7 +30,7 @@ export default function FocusTimer({ remainingSeconds, plannedMinutes, status })
         />
         <div className="absolute inset-8 rounded-full bg-slate-950/90 backdrop-blur-xl" />
         <div className="relative">
-          <p className="text-sm text-cyan-100/70">{status === "paused" ? "已暂停" : status === "running" ? "专注进行中" : "准备开始"}</p>
+          <p className="text-sm text-cyan-100/70">{statusText(status)}</p>
           <p className="mt-2 font-mono text-6xl font-black text-white">{formatTime(remainingSeconds)}</p>
           <p className="mt-3 text-sm text-slate-400">计划 {plannedMinutes} 分钟</p>
         </div>

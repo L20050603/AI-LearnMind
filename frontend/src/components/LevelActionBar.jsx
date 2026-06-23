@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, FilePlus2, Focus, HelpCircle, Search, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { completeLevel, createTask, logInteraction } from "../api/client.js";
+import { completeLevel, createTask, generateQuiz, logInteraction } from "../api/client.js";
 import { useAppData } from "../context/AppDataContext.jsx";
 import LoadingOverlay from "./common/LoadingOverlay.jsx";
 import SuccessBurst from "./common/SuccessBurst.jsx";
@@ -49,6 +49,25 @@ export default function LevelActionBar({ level, compact = false }) {
     }
   }
 
+  async function generateCurrentQuiz() {
+    if (!current) return;
+    setBusy(true);
+    try {
+      const result = await generateQuiz({
+        knowledgePointId: current.id,
+        sourceType: "level",
+        sourceId: current.id,
+        count: 5,
+      });
+      showToast("小测验已生成，正在进入答题页。", "success");
+      navigate(`/quiz/${result.quiz?.id}`);
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "生成小测验失败。", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function completeCurrentLevel() {
     if (!current) return;
     setBusy(true);
@@ -78,7 +97,7 @@ export default function LevelActionBar({ level, compact = false }) {
     { label: "AI 讲解", icon: HelpCircle, action: () => go("/tutor", "ai", "explain_level") },
     { label: "加入今日计划", icon: FilePlus2, action: addTodayPlan },
     { label: "开始专注", icon: Focus, action: () => go("/focus", "focus", "start_focus") },
-    { label: "生成小测验", icon: Sparkles, action: () => go("/tutor", "quiz", "generate_quiz") },
+    { label: "生成小测验", icon: Sparkles, action: generateCurrentQuiz },
     { label: "完成当前关卡", icon: CheckCircle2, action: completeCurrentLevel },
   ];
 

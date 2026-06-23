@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { getQuiz, submitQuiz } from "../api/client.js";
+import { getQuiz, getQuizHistory, submitQuiz } from "../api/client.js";
+import { useToast } from "../components/common/ToastProvider.jsx";
+import QuizHistoryPanel from "../components/quiz/QuizHistoryPanel.jsx";
 import QuizPanel from "../components/quiz/QuizPanel.jsx";
 import QuizResultPanel from "../components/quiz/QuizResultPanel.jsx";
-import { useToast } from "../components/common/ToastProvider.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
@@ -16,23 +17,38 @@ export default function QuizPage() {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
+  const [history, setHistory] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  async function loadQuiz() {
+    const [quizData, historyData] = await Promise.all([getQuiz(quizId), getQuizHistory()]);
+    setQuiz(quizData);
+    setHistory(historyData || []);
+  }
+
   useEffect(() => {
-    getQuiz(quizId).then(setQuiz).catch(() => showToast("测验读取失败。", "error"));
-  }, [quizId, showToast]);
+    setAnswers({});
+    setResult(null);
+    loadQuiz().catch((error) => showToast(error?.response?.data?.detail || "测验读取失败。", "error"));
+  }, [quizId]);
 
   function setAnswer(questionId, value) {
     setAnswers((current) => ({ ...current, [questionId]: value }));
   }
 
   async function handleSubmit() {
+    if (!quiz?.questions?.length) return;
+    if (Object.keys(answers).length < quiz.questions.length) {
+      showToast("还有题目未作答，请完成后再提交。", "error");
+      return;
+    }
     setBusy(true);
     try {
-      const data = await submitQuiz(quizId, { answers });
+      const data = await submitQuiz(quizId, answers);
       setResult(data);
       await refreshAll();
-      showToast("测验已评分，学习状态已刷新。", "success");
+      setHistory(await getQuizHistory());
+      showToast("测验已评分，掌握度、XP、风险和学习地图已刷新。", "success");
     } catch (error) {
       showToast(error?.response?.data?.detail || "提交测验失败。", "error");
     } finally {
@@ -41,10 +57,26 @@ export default function QuizPage() {
   }
 
   return (
-    <PageContainer eyebrow="学习测验" title="测验闭环" description="答题结果会写入学习记录，并影响掌握度、XP、风险评分和学习地图状态。">
-      <QuizPanel quiz={quiz} answers={answers} setAnswer={setAnswer} onSubmit={handleSubmit} busy={busy} />
-      <QuizResultPanel result={result} />
-      <button type="button" onClick={() => navigate("/resources")} className="action-button">返回资源猎手</button>
+    <PageContainer
+      eyebrow="学习测验"
+      title="测验闭环"
+      description="答题结果会写入学习记录，并影响掌握度、XP、风险评分和学习地图状态。"
+    >
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-4">
+          <QuizPanel quiz={quiz} answers={answers} setAnswer={setAnswer} onSubmit={handleSubmit} busy={busy} result={result} />
+          <QuizResultPanel result={result} />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => navigate("/resources")} className="action-button">
+              返回资源猎手
+            </button>
+            <button type="button" onClick={() => navigate("/map")} className="action-button">
+              查看学习地图
+            </button>
+          </div>
+        </div>
+        <QuizHistoryPanel history={history} />
+      </div>
     </PageContainer>
   );
 }

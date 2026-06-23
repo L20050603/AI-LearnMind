@@ -3,9 +3,9 @@ import json
 from models import InteractionEvent
 
 
-def log_event(db, event_type, name="", action="", page="", target_id=None, metadata=None):
+def log_event(db, event_type, name="", action="", page="", target_id=None, metadata=None, user_id: int = 1):
     event = InteractionEvent(
-        user_id=1,
+        user_id=user_id,
         type=event_type,
         name=name,
         action=action,

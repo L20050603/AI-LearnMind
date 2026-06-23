@@ -29,26 +29,26 @@ def serialize_session(session: FocusSession):
     }
 
 
-def current_session(db):
+def current_session(db, user_id: int = 1):
     return (
         db.query(FocusSession)
-        .filter(FocusSession.user_id == 1, FocusSession.status.in_(ACTIVE_STATUSES))
+        .filter(FocusSession.user_id == user_id, FocusSession.status.in_(ACTIVE_STATUSES))
         .order_by(FocusSession.id.desc())
         .first()
     )
 
 
-def start_focus_session(db, payload):
+def start_focus_session(db, payload, user_id: int = 1):
     point = graph_point(payload.knowledgePointId)
     if not point:
         raise HTTPException(status_code=404, detail="知识点不存在")
 
-    running = current_session(db)
+    running = current_session(db, user_id)
     if running:
         raise HTTPException(status_code=409, detail="已经有一个专注会话正在进行，请先完成或取消。")
 
     session = FocusSession(
-        user_id=1,
+        user_id=user_id,
         knowledge_point_id=payload.knowledgePointId,
         task_id=payload.taskId,
         planned_minutes=payload.plannedMinutes,
@@ -64,36 +64,37 @@ def start_focus_session(db, payload):
         page="FocusRoom",
         target_id=payload.knowledgePointId,
         metadata={"planned_minutes": payload.plannedMinutes, "source": payload.source},
+        user_id=user_id,
     )
     db.commit()
     db.refresh(session)
     return session
 
 
-def get_focus_session(db, session_id: int):
-    session = db.query(FocusSession).filter(FocusSession.id == session_id, FocusSession.user_id == 1).first()
+def get_focus_session(db, session_id: int, user_id: int = 1):
+    session = db.query(FocusSession).filter(FocusSession.id == session_id, FocusSession.user_id == user_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="专注会话不存在")
     return session
 
 
-def pause_focus_session(db, session_id: int):
-    session = get_focus_session(db, session_id)
+def pause_focus_session(db, session_id: int, user_id: int = 1):
+    session = get_focus_session(db, session_id, user_id)
     if session.status != "running":
         raise HTTPException(status_code=400, detail="只有进行中的会话可以暂停")
     session.status = "paused"
-    log_event(db, "focus", name="pause_focus", action="pause", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id})
+    log_event(db, "focus", name="pause_focus", action="pause", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id}, user_id=user_id)
     db.commit()
     db.refresh(session)
     return session
 
 
-def resume_focus_session(db, session_id: int):
-    session = get_focus_session(db, session_id)
+def resume_focus_session(db, session_id: int, user_id: int = 1):
+    session = get_focus_session(db, session_id, user_id)
     if session.status != "paused":
         raise HTTPException(status_code=400, detail="只有暂停中的会话可以继续")
     session.status = "running"
-    log_event(db, "focus", name="resume_focus", action="resume", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id})
+    log_event(db, "focus", name="resume_focus", action="resume", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id}, user_id=user_id)
     db.commit()
     db.refresh(session)
     return session
@@ -105,8 +106,8 @@ def _elapsed_minutes(session: FocusSession):
     return max(1, round(seconds / 60))
 
 
-def finish_focus_session(db, session_id: int):
-    session = get_focus_session(db, session_id)
+def finish_focus_session(db, session_id: int, user_id: int = 1):
+    session = get_focus_session(db, session_id, user_id)
     if session.status not in ACTIVE_STATUSES:
         raise HTTPException(status_code=400, detail="该专注会话已经结束")
 
@@ -119,7 +120,7 @@ def finish_focus_session(db, session_id: int):
     point = graph_point(session.knowledge_point_id)
     db.add(
         StudyRecord(
-            user_id=1,
+            user_id=user_id,
             knowledge_point_id=session.knowledge_point_id,
             task_id=session.task_id,
             study_minutes=session.actual_minutes,
@@ -130,12 +131,12 @@ def finish_focus_session(db, session_id: int):
     )
 
     if session.task_id:
-        task = db.query(LearningTask).filter(LearningTask.id == session.task_id).first()
+        task = db.query(LearningTask).filter(LearningTask.id == session.task_id, LearningTask.user_id == user_id).first()
         if task:
             task.completed = True
             task.completed_at = utc_now()
 
-    user = db.query(User).filter(User.id == 1).first()
+    user = db.query(User).filter(User.id == user_id).first()
     if user:
         user.xp += session.xp_gained
 
@@ -147,12 +148,13 @@ def finish_focus_session(db, session_id: int):
         page="FocusRoom",
         target_id=session.knowledge_point_id,
         metadata={"session_id": session.id, "actual_minutes": session.actual_minutes, "xp_gained": session.xp_gained},
+        user_id=user_id,
     )
     db.commit()
     db.refresh(session)
 
-    level = next((node for node in get_knowledge_nodes(db) if node["id"] == session.knowledge_point_id), None)
-    risk = evaluate_risk(db, persist=True)
+    level = next((node for node in get_knowledge_nodes(db, user_id) if node["id"] == session.knowledge_point_id), None)
+    risk = evaluate_risk(db, persist=True, user_id=user_id)
     return {
         "session": serialize_session(session),
         "xpGained": session.xp_gained,
@@ -163,21 +165,21 @@ def finish_focus_session(db, session_id: int):
     }
 
 
-def cancel_focus_session(db, session_id: int):
-    session = get_focus_session(db, session_id)
+def cancel_focus_session(db, session_id: int, user_id: int = 1):
+    session = get_focus_session(db, session_id, user_id)
     if session.status not in ACTIVE_STATUSES:
         raise HTTPException(status_code=400, detail="该专注会话已经结束")
     session.status = "cancelled"
     session.end_time = utc_now()
     session.actual_minutes = _elapsed_minutes(session)
-    log_event(db, "focus", name="cancel_focus", action="cancel", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id})
+    log_event(db, "focus", name="cancel_focus", action="cancel", page="FocusRoom", target_id=session.knowledge_point_id, metadata={"session_id": session.id}, user_id=user_id)
     db.commit()
     db.refresh(session)
     return session
 
 
-def focus_stats(db):
-    sessions = db.query(FocusSession).filter(FocusSession.user_id == 1).order_by(FocusSession.id.desc()).limit(30).all()
+def focus_stats(db, user_id: int = 1):
+    sessions = db.query(FocusSession).filter(FocusSession.user_id == user_id).order_by(FocusSession.id.desc()).limit(30).all()
     finished = [item for item in sessions if item.status == "finished"]
     total_minutes = sum(item.actual_minutes for item in finished)
     return {

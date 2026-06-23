@@ -17,11 +17,7 @@ AGENT_PIPELINE = [
     report_agent,
 ]
 
-LATEST_RUN = {
-    "run_id": None,
-    "blackboard": [],
-    "final_advice": None,
-}
+LATEST_RUNS = {}
 
 
 def _week_start():
@@ -37,17 +33,28 @@ def _daily_minutes(records):
     return minutes
 
 
-def build_context(db):
-    records = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start()).all()
-    all_records = db.query(StudyRecord).order_by(StudyRecord.created_at.desc()).all()
-    emotions = db.query(EmotionCheckin).order_by(EmotionCheckin.created_at.desc()).limit(10).all()
-    tasks = db.query(LearningTask).order_by(LearningTask.created_at.desc()).all()
-    wrong_questions = db.query(WrongQuestion).order_by(WrongQuestion.created_at.desc()).all()
-    nodes = get_knowledge_nodes(db)
-    risk = evaluate_risk(db, persist=False)
+def build_context(db, user_id: int | None = None):
+    records_query = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start())
+    all_records_query = db.query(StudyRecord)
+    emotions_query = db.query(EmotionCheckin)
+    tasks_query = db.query(LearningTask)
+    wrong_query = db.query(WrongQuestion)
+    if user_id is not None:
+        records_query = records_query.filter(StudyRecord.user_id == user_id)
+        all_records_query = all_records_query.filter(StudyRecord.user_id == user_id)
+        emotions_query = emotions_query.filter(EmotionCheckin.user_id == user_id)
+        tasks_query = tasks_query.filter(LearningTask.user_id == user_id)
+        wrong_query = wrong_query.filter(WrongQuestion.user_id == user_id)
+    records = records_query.all()
+    all_records = all_records_query.order_by(StudyRecord.created_at.desc()).all()
+    emotions = emotions_query.order_by(EmotionCheckin.created_at.desc()).limit(10).all()
+    tasks = tasks_query.order_by(LearningTask.created_at.desc()).all()
+    wrong_questions = wrong_query.order_by(WrongQuestion.created_at.desc()).all()
+    nodes = get_knowledge_nodes(db, user_id)
+    risk = evaluate_risk(db, persist=False, user_id=user_id)
 
     return {
-        "stats": calculate_dashboard_stats(db),
+        "stats": calculate_dashboard_stats(db, user_id),
         "records": all_records,
         "weekly_records": records,
         "daily_minutes": _daily_minutes(records),
@@ -56,7 +63,7 @@ def build_context(db):
         "wrong_questions": wrong_questions,
         "nodes": nodes,
         "risk": risk,
-        "today_path": today_learning_path(db),
+        "today_path": today_learning_path(db, user_id),
     }
 
 
@@ -100,26 +107,30 @@ def _weighted_final_advice(entries, context):
     }
 
 
-def run_agents(db):
-    context = build_context(db)
+def run_agents(db, user_id: int | None = None):
+    context = build_context(db, user_id)
     board = Blackboard()
     for agent in AGENT_PIPELINE:
         board.write(agent.run(context))
 
     entries = board.snapshot()
     final_advice = _weighted_final_advice(entries, context)
-    LATEST_RUN["run_id"] = datetime.now(UTC).replace(tzinfo=None).isoformat(timespec="seconds")
-    LATEST_RUN["blackboard"] = entries
-    LATEST_RUN["final_advice"] = final_advice
+    cache_key = user_id or 0
+    LATEST_RUNS[cache_key] = {
+        "run_id": datetime.now(UTC).replace(tzinfo=None).isoformat(timespec="seconds"),
+        "blackboard": entries,
+        "final_advice": final_advice,
+    }
 
     return {
-        "run_id": LATEST_RUN["run_id"],
+        "run_id": LATEST_RUNS[cache_key]["run_id"],
         "blackboard": entries,
         "final_advice": final_advice,
     }
 
 
-def latest_or_run(db):
-    if not LATEST_RUN["blackboard"]:
-        return run_agents(db)
-    return LATEST_RUN
+def latest_or_run(db, user_id: int | None = None):
+    cache_key = user_id or 0
+    if cache_key not in LATEST_RUNS or not LATEST_RUNS[cache_key]["blackboard"]:
+        return run_agents(db, user_id)
+    return LATEST_RUNS[cache_key]

@@ -15,6 +15,7 @@ from database import Base, get_db  # noqa: E402
 from main import app  # noqa: E402
 from models import EmotionCheckin, LearningTask, StudyRecord, User, WrongQuestion  # noqa: E402
 from services.emotion_service import analyze_emotion  # noqa: E402
+from services.security import hash_password  # noqa: E402
 
 
 @pytest.fixture()
@@ -28,7 +29,21 @@ def db_session():
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
-        db.add(User(id=1, name="测试同学", level=7, xp=2680, goal="期末冲刺 85+"))
+        db.add(
+            User(
+                id=1,
+                username="demo",
+                email="demo@test.local",
+                password_hash=hash_password("123456"),
+                name="测试同学",
+                level=7,
+                xp=2680,
+                goal="期末冲刺 85+",
+                target_score=85,
+                daily_minutes_goal=90,
+                weekly_minutes_goal=540,
+            )
+        )
         db.add_all(
             [
                 LearningTask(user_id=1, knowledge_point_id=2, title="复习操作系统基础", completed=True, estimated_minutes=30),
@@ -43,7 +58,7 @@ def db_session():
                 StudyRecord(user_id=1, knowledge_point_id=6, study_minutes=25, correct_count=2, wrong_count=6, note="LRU 仍薄弱"),
             ]
         )
-        stress_score, stress_level = analyze_emotion("焦虑", "页面置换总是错，有点焦虑，需要帮助")
+        stress_score, stress_level = analyze_emotion("焦虑", "我很焦虑也很疲惫，需要帮助，但还能继续")
         db.add(EmotionCheckin(user_id=1, mood="焦虑", text="页面置换总是错，有点焦虑，需要帮助", stress_score=stress_score, stress_level=stress_level))
         db.add_all(
             [
@@ -68,5 +83,8 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
+        response = test_client.post("/api/auth/login", json={"username": "demo", "password": "123456"})
+        assert response.status_code == 200, response.text
+        test_client.headers.update({"Authorization": f"Bearer {response.json()['access_token']}"})
         yield test_client
     app.dependency_overrides.clear()

@@ -11,16 +11,25 @@ def _week_start():
     return datetime.combine(date.today() - timedelta(days=6), datetime.min.time())
 
 
-def task_completion_rate(db):
-    tasks = db.query(LearningTask).all()
+def task_completion_rate(db, user_id: int | None = None):
+    query = db.query(LearningTask)
+    if user_id is not None:
+        query = query.filter(LearningTask.user_id == user_id)
+    tasks = query.all()
     return round(sum(1 for task in tasks if task.completed) / max(1, len(tasks)) * 100)
 
 
-def correctness_metrics(db):
-    records = db.query(StudyRecord).all()
+def correctness_metrics(db, user_id: int | None = None):
+    query = db.query(StudyRecord)
+    if user_id is not None:
+        query = query.filter(StudyRecord.user_id == user_id)
+    records = query.all()
     correct = sum(record.correct_count for record in records)
     wrong = sum(record.wrong_count for record in records)
-    open_wrong = db.query(WrongQuestion).filter(WrongQuestion.fixed.is_(False)).count()
+    wrong_query = db.query(WrongQuestion).filter(WrongQuestion.fixed.is_(False))
+    if user_id is not None:
+        wrong_query = wrong_query.filter(WrongQuestion.user_id == user_id)
+    open_wrong = wrong_query.count()
     answered = max(1, correct + wrong)
     accuracy = correct / answered
     wrong_rate = (wrong + open_wrong) / max(1, answered + open_wrong)
@@ -33,8 +42,11 @@ def correctness_metrics(db):
     }
 
 
-def study_stability_score(db):
-    records = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start()).all()
+def study_stability_score(db, user_id: int | None = None):
+    query = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start())
+    if user_id is not None:
+        query = query.filter(StudyRecord.user_id == user_id)
+    records = query.all()
     minutes = [0] * 7
     first_day = date.today() - timedelta(days=6)
     for record in records:
@@ -48,19 +60,22 @@ def study_stability_score(db):
     return int(max(0, min(100, round(100 - volatility * 38))))
 
 
-def learning_efficiency_score(db):
-    completion = task_completion_rate(db)
-    metrics = correctness_metrics(db)
-    stability = study_stability_score(db)
+def learning_efficiency_score(db, user_id: int | None = None):
+    completion = task_completion_rate(db, user_id)
+    metrics = correctness_metrics(db, user_id)
+    stability = study_stability_score(db, user_id)
     score = completion * 0.35 + metrics["accuracy"] * 100 * 0.40 + stability * 0.25
     return int(max(0, min(100, round(score))))
 
 
-def latest_emotion_context(db, override=None):
+def latest_emotion_context(db, override=None, user_id: int | None = None):
     if override and (override.mood or override.text):
         return analyze_emotion_text(override.mood or "平稳", override.text or "")
 
-    latest = db.query(EmotionCheckin).order_by(EmotionCheckin.created_at.desc()).first()
+    query = db.query(EmotionCheckin)
+    if user_id is not None:
+        query = query.filter(EmotionCheckin.user_id == user_id)
+    latest = query.order_by(EmotionCheckin.created_at.desc()).first()
     if latest:
         return {
             "stress_score": latest.stress_score,
@@ -71,13 +86,13 @@ def latest_emotion_context(db, override=None):
     return analyze_emotion_text("平稳", "")
 
 
-def evaluate_risk(db, override=None, persist=True):
-    completion = task_completion_rate(db)
-    correctness = correctness_metrics(db)
-    avg_mastery = average_mastery(db)
-    stability = study_stability_score(db)
-    efficiency = learning_efficiency_score(db)
-    emotion = latest_emotion_context(db, override)
+def evaluate_risk(db, override=None, persist=True, user_id: int | None = None):
+    completion = task_completion_rate(db, user_id)
+    correctness = correctness_metrics(db, user_id)
+    avg_mastery = average_mastery(db, user_id)
+    stability = study_stability_score(db, user_id)
+    efficiency = learning_efficiency_score(db, user_id)
+    emotion = latest_emotion_context(db, override, user_id)
 
     risk_score = round(
         (100 - completion) * 0.22
@@ -111,14 +126,14 @@ def evaluate_risk(db, override=None, persist=True):
             "learning_efficiency": efficiency,
             "stress_score": emotion["stress_score"],
             "stress_level": emotion["stress_level"],
-            "knowledge_mastery": mastery_map(db),
+            "knowledge_mastery": mastery_map(db, user_id),
             "emotion_hits": emotion["matched_categories"],
         },
     }
 
     if persist:
         report = RiskReport(
-            user_id=1,
+            user_id=user_id or 1,
             learning_risk=risk_score,
             pressure_risk=emotion["stress_score"],
             comprehensive_risk=risk_score,

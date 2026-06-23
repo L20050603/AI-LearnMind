@@ -30,11 +30,11 @@ def _selected_level(db, selected_level_id=None):
     return next((node for node in nodes if node["status"] in {"current", "boss"}), nodes[0] if nodes else None)
 
 
-def _context(db, query="", selected_level_id=None):
+def _context(db, query="", selected_level_id=None, user_id: int | None = None):
     level = _selected_level(db, selected_level_id)
     search_query = query or (level.get("title") if level else "")
     results = search_materials(search_query, limit=4)
-    risk = evaluate_risk(db, persist=False)
+    risk = evaluate_risk(db, persist=False, user_id=user_id)
     return {
         "selected_level": level,
         "risk": risk,
@@ -51,9 +51,9 @@ def _suggestions(topic):
     ]
 
 
-def chat_with_tutor(db, message, history=None, selected_level_id=None):
+def chat_with_tutor(db, message, history=None, selected_level_id=None, user_id: int | None = None):
     history = history or []
-    context = _context(db, message, selected_level_id)
+    context = _context(db, message, selected_level_id, user_id)
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for item in history[-8:]:
         role = item.get("role")
@@ -76,8 +76,8 @@ def local_chat_reply(db, question, history=None):
     return chat_with_tutor(db, question, history, None)
 
 
-def explain_topic(db, topic, question="", selected_level_id=None):
-    context = _context(db, f"{topic} {question}".strip(), selected_level_id)
+def explain_topic(db, topic, question="", selected_level_id=None, user_id: int | None = None):
+    context = _context(db, f"{topic} {question}".strip(), selected_level_id, user_id)
     result, mode = call_provider("explain_topic", topic, context)
     answer = result.get("answer") or result.get("explanation") or ""
     return {
@@ -94,8 +94,10 @@ def explain_topic(db, topic, question="", selected_level_id=None):
     }
 
 
-def explain_wrong_question(db, wrong_question_id=None):
+def explain_wrong_question(db, wrong_question_id=None, user_id: int | None = None):
     query = db.query(WrongQuestion).order_by(WrongQuestion.created_at.desc())
+    if user_id is not None:
+        query = query.filter(WrongQuestion.user_id == user_id)
     if wrong_question_id:
         query = query.filter(WrongQuestion.id == wrong_question_id)
     wrong = query.first()
@@ -106,7 +108,7 @@ def explain_wrong_question(db, wrong_question_id=None):
             "sources": [],
             "suggestedQuestions": ["How do I add a wrong question?", "How should I repair mistakes?"],
         }
-    context = _context(db, wrong.question, wrong.knowledge_point_id)
+    context = _context(db, wrong.question, wrong.knowledge_point_id, user_id)
     result, mode = call_provider("explain_wrong_question", wrong.question, wrong.reason, context)
     answer = result.get("answer") or ""
     return {
@@ -118,10 +120,10 @@ def explain_wrong_question(db, wrong_question_id=None):
     }
 
 
-def generate_quiz(db, knowledge_point_id, count=5):
+def generate_quiz(db, knowledge_point_id, count=5, user_id: int | None = None):
     level = _selected_level(db, knowledge_point_id)
     topic = level.get("title") if level else f"knowledge point {knowledge_point_id}"
-    context = _context(db, topic, knowledge_point_id)
+    context = _context(db, topic, knowledge_point_id, user_id)
     quiz, mode = call_provider("generate_quiz", topic, context, count)
     return {
         "answer": f"Generated {len(quiz)} quiz questions for {topic}.",
@@ -133,7 +135,7 @@ def generate_quiz(db, knowledge_point_id, count=5):
     }
 
 
-def summarize_resource(db, resource_id=None, title="", content=""):
+def summarize_resource(db, resource_id=None, title="", content="", user_id: int | None = None):
     materials = load_materials()
     material = next((item for item in materials if item["id"] == resource_id), None)
     if material:
@@ -142,7 +144,7 @@ def summarize_resource(db, resource_id=None, title="", content=""):
         selected_level_id = material.get("knowledge_point_id")
     else:
         selected_level_id = None
-    context = _context(db, f"{title} {content[:120]}", selected_level_id)
+    context = _context(db, f"{title} {content[:120]}", selected_level_id, user_id)
     summary, mode = call_provider("summarize_resource", title or "resource", content or "", context)
     answer = summary.get("summary") if isinstance(summary, dict) else str(summary)
     return {

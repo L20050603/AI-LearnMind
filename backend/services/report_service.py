@@ -6,12 +6,12 @@ from services.mastery_service import get_knowledge_nodes
 from services.risk_engine import evaluate_risk
 
 
-def weekly_report(db):
-    stats = calculate_dashboard_stats(db)
-    charts = chart_payload(db)
-    nodes = get_knowledge_nodes(db)
-    risk = evaluate_risk(db, persist=False)
-    agent = latest_or_run(db)["final_advice"]
+def weekly_report(db, user_id: int | None = None):
+    stats = calculate_dashboard_stats(db, user_id)
+    charts = chart_payload(db, user_id)
+    nodes = get_knowledge_nodes(db, user_id)
+    risk = evaluate_risk(db, persist=False, user_id=user_id)
+    agent = latest_or_run(db, user_id)["final_advice"]
     weak_nodes = sorted(nodes, key=lambda node: (node["mastery"], -node.get("exam_weight", 0)))[:3]
     mastery_change = [
         {
@@ -36,8 +36,8 @@ def weekly_report(db):
     }
 
 
-def weekly_report_markdown(db):
-    report = weekly_report(db)
+def weekly_report_markdown(db, user_id: int | None = None):
+    report = weekly_report(db, user_id)
     weak = "\n".join(
         f"- {item['title']}：掌握度 {item['mastery']}%，状态 {item['status']}"
         for item in report["weak_points"]

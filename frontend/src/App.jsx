@@ -1,14 +1,18 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 
+import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import AppShell from "./layouts/AppShell.jsx";
 import AgentLab from "./pages/AgentLab.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import FocusRoom from "./pages/FocusRoom.jsx";
 import KnowledgeGraphPage from "./pages/KnowledgeGraphPage.jsx";
 import LearningMapPage from "./pages/LearningMapPage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
 import MultimodalLab from "./pages/MultimodalLab.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
 import QuizPage from "./pages/QuizPage.jsx";
 import ResourceHunter from "./pages/ResourceHunter.jsx";
 import RiskCenterPage from "./pages/RiskCenterPage.jsx";
@@ -43,9 +47,22 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppShell>
-        <AnimatedRoutes />
-      </AppShell>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <AnimatedRoutes />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

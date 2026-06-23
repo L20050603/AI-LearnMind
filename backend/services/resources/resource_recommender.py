@@ -2,8 +2,8 @@ from models import LearningResource
 from services.mastery_service import mastery_map
 
 
-def today_recommendations(db, limit=5):
-    scores = mastery_map(db)
+def today_recommendations(db, user_id: int | None = None, limit=5):
+    scores = mastery_map(db, user_id)
     weak_ids = [point_id for point_id, mastery in sorted(scores.items(), key=lambda item: item[1])[:4]]
     query = db.query(LearningResource)
     if weak_ids:

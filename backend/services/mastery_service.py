@@ -17,10 +17,17 @@ def recommendation_strategy(point, mastery, prereq_details):
     return "当前掌握较稳，可作为后续关卡的前置支撑。"
 
 
-def point_metrics(db, point_id: int):
-    records = db.query(StudyRecord).filter(StudyRecord.knowledge_point_id == point_id).all()
-    tasks = db.query(LearningTask).filter(LearningTask.knowledge_point_id == point_id).all()
-    wrong_questions = db.query(WrongQuestion).filter(WrongQuestion.knowledge_point_id == point_id).all()
+def point_metrics(db, point_id: int, user_id: int | None = None):
+    records_query = db.query(StudyRecord).filter(StudyRecord.knowledge_point_id == point_id)
+    tasks_query = db.query(LearningTask).filter(LearningTask.knowledge_point_id == point_id)
+    wrong_query = db.query(WrongQuestion).filter(WrongQuestion.knowledge_point_id == point_id)
+    if user_id is not None:
+        records_query = records_query.filter(StudyRecord.user_id == user_id)
+        tasks_query = tasks_query.filter(LearningTask.user_id == user_id)
+        wrong_query = wrong_query.filter(WrongQuestion.user_id == user_id)
+    records = records_query.all()
+    tasks = tasks_query.all()
+    wrong_questions = wrong_query.all()
 
     correct = sum(record.correct_count for record in records)
     wrong_from_records = sum(record.wrong_count for record in records)
@@ -40,8 +47,8 @@ def point_metrics(db, point_id: int):
     }
 
 
-def calculate_point_mastery(db, point):
-    metrics = point_metrics(db, point["id"])
+def calculate_point_mastery(db, point, user_id: int | None = None):
+    metrics = point_metrics(db, point["id"], user_id)
     base_mastery = 100 if point["id"] == 1 else max(12, 72 - point["difficulty"] * 0.45)
     if metrics["review_count"] == 0 and metrics["task_count"] == 0 and metrics["open_wrong_count"] == 0:
         mastery = base_mastery
@@ -58,17 +65,17 @@ def calculate_point_mastery(db, point):
     return int(max(0, min(100, round(mastery))))
 
 
-def mastery_map(db):
-    return {point["id"]: calculate_point_mastery(db, point) for point in graph_points()}
+def mastery_map(db, user_id: int | None = None):
+    return {point["id"]: calculate_point_mastery(db, point, user_id) for point in graph_points()}
 
 
-def average_mastery(db):
-    values = list(mastery_map(db).values())
+def average_mastery(db, user_id: int | None = None):
+    values = list(mastery_map(db, user_id).values())
     return sum(values) / max(1, len(values))
 
 
-def get_knowledge_nodes(db):
-    scores = mastery_map(db)
+def get_knowledge_nodes(db, user_id: int | None = None):
+    scores = mastery_map(db, user_id)
     nodes = []
     for point in graph_points():
         mastery = scores.get(point["id"], 0)

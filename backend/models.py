@@ -13,11 +13,24 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, index=True, default="")
+    email = Column(String, index=True, default="")
+    password_hash = Column(String, default="")
     name = Column(String, index=True, nullable=False)
+    avatar = Column(String, default="")
+    major = Column(String, default="")
+    grade = Column(String, default="")
     level = Column(Integer, default=1)
     xp = Column(Integer, default=0)
     goal = Column(String, default="")
+    target_score = Column(Integer, default=85)
+    exam_date = Column(String, default="")
+    daily_minutes_goal = Column(Integer, default=90)
+    weekly_minutes_goal = Column(Integer, default=540)
+    preferred_study_time = Column(String, default="晚上 19:00-22:00")
+    study_style = Column(String, default="闯关 + 测验驱动")
     created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 class KnowledgePoint(Base):

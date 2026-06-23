@@ -8,6 +8,12 @@ class StudentProfile(BaseModel):
     level: int
     xp: int
     goal: str
+    target_score: int = 85
+    exam_date: str = ""
+    daily_minutes_goal: int = 90
+    weekly_minutes_goal: int = 540
+    preferred_study_time: str = ""
+    study_style: str = ""
 
 
 class DashboardStats(BaseModel):
@@ -105,6 +111,66 @@ class TutorAIResponse(BaseModel):
     examples: list[str] = Field(default_factory=list)
     quiz: list[dict] = Field(default_factory=list)
     summary: dict | None = None
+
+
+class UserPublic(BaseModel):
+    id: int
+    username: str = ""
+    email: str = ""
+    name: str
+    avatar: str = ""
+    major: str = ""
+    grade: str = ""
+    level: int
+    xp: int
+    goal: str = ""
+    target_score: int = 85
+    exam_date: str = ""
+    daily_minutes_goal: int = 90
+    weekly_minutes_goal: int = 540
+    preferred_study_time: str = "晚上 19:00-22:00"
+    study_style: str = "闯关 + 测验驱动"
+
+    model_config = {"from_attributes": True}
+
+
+class AuthRegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=40)
+    email: str
+    password: str = Field(min_length=6, max_length=128)
+    name: str = Field(min_length=1, max_length=60)
+
+
+class AuthLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserPublic
+
+
+class ProfileUpdateRequest(BaseModel):
+    name: str | None = None
+    avatar: str | None = None
+    major: str | None = None
+    grade: str | None = None
+    email: str | None = None
+
+
+class GoalUpdateRequest(BaseModel):
+    goal: str
+    target_score: int = Field(default=85, ge=0, le=100)
+    exam_date: str = ""
+
+
+class StudyPlanUpdateRequest(BaseModel):
+    daily_minutes_goal: int = Field(default=90, ge=0, le=600)
+    weekly_minutes_goal: int = Field(default=540, ge=0, le=4200)
+    preferred_study_time: str = ""
+    study_style: str = ""
 
 
 class ResourceSearchRequest(BaseModel):

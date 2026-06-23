@@ -6,9 +6,12 @@ from services.mastery_service import mastery_map
 from services.unlock_service import node_status, prerequisites_status
 
 
-def _urgency(db, point_id: int):
+def _urgency(db, point_id: int, user_id: int | None = None):
     today = date.today().isoformat()
-    tasks = db.query(LearningTask).filter(LearningTask.knowledge_point_id == point_id).all()
+    query = db.query(LearningTask).filter(LearningTask.knowledge_point_id == point_id)
+    if user_id is not None:
+        query = query.filter(LearningTask.user_id == user_id)
+    tasks = query.all()
     if not tasks:
         return 35
     open_tasks = [task for task in tasks if not task.completed]
@@ -16,10 +19,10 @@ def _urgency(db, point_id: int):
     return min(100, 35 + len(open_tasks) * 15 + len(due_today) * 25)
 
 
-def priority_for_point(db, point, mastery_scores):
+def priority_for_point(db, point, mastery_scores, user_id: int | None = None):
     weakness_score = 100 - mastery_scores.get(point["id"], 0)
     prerequisite_importance = downstream_count(point["id"]) / max(1, max_downstream_count()) * 100
-    urgency = _urgency(db, point["id"])
+    urgency = _urgency(db, point["id"], user_id)
     priority = (
         point["exam_weight"] * 0.35
         + weakness_score * 0.35
@@ -43,14 +46,14 @@ def recommendation_strategy(point, mastery, prereq_details):
     return "当前掌握较稳，可作为后续关卡的前置支撑。"
 
 
-def ranked_candidates(db):
-    scores = mastery_map(db)
+def ranked_candidates(db, user_id: int | None = None):
+    scores = mastery_map(db, user_id)
     candidates = []
     for point in graph_points():
         status = node_status(point, scores)
         unlocked, prereq_details = prerequisites_status(point, scores)
         mastery = scores.get(point["id"], 0)
-        priority = priority_for_point(db, point, scores)
+        priority = priority_for_point(db, point, scores, user_id)
         candidates.append(
             {
                 "id": point["id"],
@@ -77,8 +80,8 @@ def ranked_candidates(db):
     )
 
 
-def today_learning_path(db):
-    candidates = ranked_candidates(db)
+def today_learning_path(db, user_id: int | None = None):
+    candidates = ranked_candidates(db, user_id)
     recommended = next((item for item in candidates if item["unlocked"] and item["status"] != "completed"), candidates[0])
     unlocked_focus = [item for item in candidates if item["unlocked"] and item["status"] != "completed"][:3]
 

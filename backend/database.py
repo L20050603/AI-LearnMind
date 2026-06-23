@@ -24,6 +24,9 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
     ensure_schema()
+    from migrate import run_migrations
+
+    run_migrations()
 
 
 def ensure_schema():

@@ -5,6 +5,52 @@ const api = axios.create({
   timeout: 45000,
 });
 
+const TOKEN_KEY = "ai_learnmind_token";
+
+export function setAuthToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+    delete api.defaults.headers.common.Authorization;
+  }
+}
+
+const storedToken = localStorage.getItem(TOKEN_KEY);
+if (storedToken) {
+  api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+}
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      setAuthToken("");
+      window.dispatchEvent(new Event("auth:logout"));
+      if (!["/login", "/register"].includes(window.location.pathname)) {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+export const register = (payload) => api.post("/api/auth/register", payload).then((res) => res.data);
+export const login = (payload) => api.post("/api/auth/login", payload).then((res) => res.data);
+export const getMe = () => api.get("/api/auth/me").then((res) => res.data);
+export const logout = () => api.post("/api/auth/logout").then((res) => res.data);
+export const getProfile = () => api.get("/api/profile").then((res) => res.data);
+export const updateProfile = (payload) => api.patch("/api/profile", payload).then((res) => res.data);
+export const updateGoal = (payload) => api.patch("/api/profile/goal", payload).then((res) => res.data);
+export const updateStudyPlan = (payload) => api.patch("/api/profile/study-plan", payload).then((res) => res.data);
+
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
 export const getKnowledgeGraph = () => api.get("/api/knowledge/graph").then((res) => res.data);

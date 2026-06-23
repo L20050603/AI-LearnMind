@@ -3,6 +3,7 @@ from datetime import timedelta
 from database import SessionLocal, init_db
 from models import EmotionCheckin, InteractionEvent, KnowledgePoint, LearningTask, StudyRecord, User, WrongQuestion, utc_now
 from services.emotion_service import analyze_emotion
+from services.security import hash_password
 
 
 def seed_database(reset: bool = False):
@@ -18,7 +19,24 @@ def seed_database(reset: bool = False):
             return
 
         now = utc_now()
-        user = User(id=1, name="李同学", level=7, xp=2680, goal="期末冲刺 85+")
+        user = User(
+            id=1,
+            username="demo",
+            email="demo@learnmind.local",
+            password_hash=hash_password("123456"),
+            name="李同学",
+            major="计算机科学与技术",
+            grade="大三",
+            level=7,
+            xp=2680,
+            goal="期末冲刺 85+",
+            target_score=85,
+            exam_date="2026-07-05",
+            daily_minutes_goal=90,
+            weekly_minutes_goal=540,
+            preferred_study_time="晚上 19:00-22:00",
+            study_style="闯关 + 测验驱动",
+        )
         db.add(user)
 
         points = [

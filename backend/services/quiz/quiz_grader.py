@@ -37,8 +37,8 @@ def _is_correct_answer(user_answer, stored_answer, options):
     return False
 
 
-def grade_quiz(db, quiz_id: int, answers: dict):
-    quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+def grade_quiz(db, quiz_id: int, answers: dict, user_id: int = 1):
+    quiz = db.query(Quiz).filter(Quiz.id == quiz_id, Quiz.user_id == user_id).first()
     if not quiz:
         return None
     questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == quiz_id).order_by(QuizQuestion.id).all()
@@ -63,7 +63,7 @@ def grade_quiz(db, quiz_id: int, answers: dict):
     xp_gained = 40 + correct * 12
     attempt = QuizAttempt(
         quiz_id=quiz.id,
-        user_id=1,
+        user_id=user_id,
         score=score,
         correct_count=correct,
         total_count=total,
@@ -73,7 +73,7 @@ def grade_quiz(db, quiz_id: int, answers: dict):
     db.add(attempt)
     db.add(
         StudyRecord(
-            user_id=1,
+            user_id=user_id,
             knowledge_point_id=quiz.knowledge_point_id,
             study_minutes=max(8, total * 4),
             correct_count=correct,
@@ -81,12 +81,12 @@ def grade_quiz(db, quiz_id: int, answers: dict):
             note=f"完成测验：{quiz.title}",
         )
     )
-    user = db.query(User).filter(User.id == 1).first()
+    user = db.query(User).filter(User.id == user_id).first()
     if user:
         user.xp += xp_gained
     db.flush()
-    level = next((node for node in get_knowledge_nodes(db) if node["id"] == quiz.knowledge_point_id), None)
-    risk = evaluate_risk(db, persist=False)
+    level = next((node for node in get_knowledge_nodes(db, user_id) if node["id"] == quiz.knowledge_point_id), None)
+    risk = evaluate_risk(db, persist=False, user_id=user_id)
     return {
         "attemptId": attempt.id,
         "score": score,

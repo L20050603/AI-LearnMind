@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, CalendarDays, FileText, Map, Pencil, Route, ShieldAlert, Sparkles } from "lucide-react";
+import { Bot, CalendarDays, FileText, Map, Orbit, Pencil, Route, ShieldAlert, Sparkles } from "lucide-react";
 
 import { getAgentsRun } from "../api/client.js";
 import LevelActionBar from "../components/LevelActionBar.jsx";
@@ -58,6 +58,9 @@ export default function Dashboard() {
         <>
           <button type="button" onClick={() => navigate("/map")} className="action-button">
             <Map size={16} /> 进入学习地图
+          </button>
+          <button type="button" onClick={() => navigate("/galaxy")} className="action-button">
+            <Orbit size={16} /> 进入知识星图
           </button>
           <button type="button" onClick={runAgentAnalysis} className="action-button">
             <Bot size={16} /> {running ? "分析中..." : "运行 Agent 分析"}

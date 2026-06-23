@@ -54,6 +54,7 @@ export const updateStudyPlan = (payload) => api.patch("/api/profile/study-plan",
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
 export const getKnowledgeGraph = () => api.get("/api/knowledge/graph").then((res) => res.data);
+export const getKnowledgeStarMap = () => api.get("/api/star-map/knowledge").then((res) => res.data);
 export const getTodayLearningPath = () => api.get("/api/learning-path/today").then((res) => res.data);
 export const getAgentsRun = () => api.get("/api/agents/run").then((res) => res.data);
 export const getAgentsBlackboard = () => api.get("/api/agents/blackboard").then((res) => res.data);

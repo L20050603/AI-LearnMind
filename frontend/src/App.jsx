@@ -7,6 +7,7 @@ import AppShell from "./layouts/AppShell.jsx";
 import AgentLab from "./pages/AgentLab.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import FocusRoom from "./pages/FocusRoom.jsx";
+import KnowledgeGalaxyPage from "./pages/KnowledgeGalaxyPage.jsx";
 import KnowledgeGraphPage from "./pages/KnowledgeGraphPage.jsx";
 import LearningMapPage from "./pages/LearningMapPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -31,6 +32,7 @@ function AnimatedRoutes() {
         <Route path="/risk" element={<RiskCenterPage />} />
         <Route path="/agents" element={<AgentLab />} />
         <Route path="/knowledge" element={<KnowledgeGraphPage />} />
+        <Route path="/galaxy" element={<KnowledgeGalaxyPage />} />
         <Route path="/resources" element={<ResourceHunter />} />
         <Route path="/quiz/:quizId" element={<QuizPage />} />
         <Route path="/tutor" element={<TutorPage />} />

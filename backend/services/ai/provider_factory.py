@@ -56,13 +56,21 @@ def load_backend_env():
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        current = os.environ.get(key)
+        if key and value and (current is None or current.strip() == "" or current.strip().lower() in {"your_api_key_here", "your_key_here", "sk-xxx"}):
             os.environ[key] = value
+
+
+def _valid_secret(value: str | None):
+    if not value:
+        return False
+    cleaned = value.strip()
+    return bool(cleaned) and cleaned.lower() not in {"your_api_key_here", "your_key_here", "sk-xxx"}
 
 
 def has_llm_key():
     load_backend_env()
-    return bool(os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("DOUBAO_API_KEY") or os.getenv("ARK_API_KEY"))
+    return any(_valid_secret(os.getenv(key)) for key in ["LLM_API_KEY", "OPENAI_API_KEY", "DOUBAO_API_KEY", "ARK_API_KEY"])
 
 
 def get_ai_provider():

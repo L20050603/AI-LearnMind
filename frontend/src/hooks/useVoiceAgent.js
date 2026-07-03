@@ -36,7 +36,7 @@ const pageNameMap = {
 export default function useVoiceAgent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { selectedLevel, refreshAll, setAgentRun } = useAppData();
+  const { selectedLevel, refreshAll, setAgentRun, activeCourse } = useAppData();
   const { showToast } = useToast();
   const recognitionRef = useRef(null);
   const [supported, setSupported] = useState(() => typeof window !== "undefined" && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
@@ -95,7 +95,7 @@ export default function useVoiceAgent() {
       return data;
     }
     if (action.name === "searchResources") {
-      const data = await searchResources({ knowledgePointId: payload.knowledgePointId || selectedLevel?.id, course: "操作系统", goal: "语音检索", resourceTypes: ["article", "exercise"], limit: 6 });
+      const data = await searchResources({ knowledgePointId: payload.knowledgePointId || selectedLevel?.id, course: activeCourse?.name || "当前学习主题", goal: "语音检索", resourceTypes: ["article", "exercise"], limit: 6 });
       sessionStorage.setItem("voiceResourceResults", JSON.stringify(data));
       addAction(`已检索 ${data.resources?.length || 0} 条资源`, "success");
       return data;

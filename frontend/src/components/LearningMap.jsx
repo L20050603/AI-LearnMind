@@ -42,7 +42,7 @@ function PrerequisiteList({ node }) {
   );
 }
 
-export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPath }) {
+export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPath, courseName }) {
   if (!nodes?.length) {
     return (
       <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="glass-panel flex min-h-[420px] items-center justify-center p-5 text-center">
@@ -57,13 +57,14 @@ export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPa
 
   const recommended = todayPath?.recommended;
   const displayNode = selectedNode || recommended || nodes.find((node) => node.status === "boss") || nodes[0];
+  const mapTitle = `${courseName || "当前主题"}学习闯关星图`;
 
   return (
     <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel relative min-h-[590px] overflow-hidden p-5">
       <div className="mb-3 flex items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase text-violet-200/60">Knowledge Graph Driven Path</p>
-          <h2 className="text-xl font-semibold text-white">操作系统学习闯关星图</h2>
+          <h2 className="text-xl font-semibold text-white">{mapTitle}</h2>
         </div>
         <div className="rounded-full border border-cyan-200/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
           {progressText(nodes)}

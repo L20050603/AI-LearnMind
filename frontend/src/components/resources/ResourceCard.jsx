@@ -1,4 +1,4 @@
-import { BookmarkPlus, ClipboardList, FilePlus2, Heart, Sparkles } from "lucide-react";
+import { BookmarkPlus, ClipboardList, FilePlus2, Heart, Sparkles, Trash2 } from "lucide-react";
 
 import ResourceScoreBadge from "./ResourceScoreBadge.jsx";
 
@@ -12,7 +12,7 @@ function typeLabel(type) {
   }[type] || type || "资源";
 }
 
-export default function ResourceCard({ resource, onFavorite, onAddPlan, onCard, onQuiz, onSelect }) {
+export default function ResourceCard({ resource, onFavorite, onAddPlan, onCard, onQuiz, onSelect, onDelete }) {
   return (
     <article className="glass-panel flex min-h-[330px] flex-col p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -61,6 +61,10 @@ export default function ResourceCard({ resource, onFavorite, onAddPlan, onCard, 
         <button type="button" onClick={() => onQuiz(resource)} className="action-button">
           <Sparkles size={15} />
           生成测验
+        </button>
+        <button type="button" onClick={() => onDelete(resource)} className="action-button border-rose-300/30 text-rose-100">
+          <Trash2 size={15} />
+          删除
         </button>
       </div>
     </article>

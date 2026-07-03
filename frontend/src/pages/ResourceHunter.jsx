@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   addResourceToPlan,
   crawlResource,
+  deleteResource,
   generateResourceCard,
   generateResourceQuiz,
   getTodayResourceRecommendations,
@@ -122,6 +123,21 @@ export default function ResourceHunter() {
     }
   }
 
+  async function handleDelete(resource) {
+    if (!window.confirm(`确定删除资源“${resource.title}”吗？`)) return;
+    try {
+      await deleteResource(resource.id);
+      setResources((items) => items.filter((item) => item.id !== resource.id));
+      setRecommendations((items) => items.filter((item) => item.id !== resource.id));
+      setSelectedResource((current) => (current?.id === resource.id ? null : current));
+      if (learningCard?.resource_title === resource.title) setLearningCard(null);
+      showToast("资源已删除。", "success");
+      await refreshAll();
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "资源删除失败。", "error");
+    }
+  }
+
   async function handleCrawl(url) {
     setBusy("crawl");
     try {
@@ -209,6 +225,7 @@ export default function ResourceHunter() {
               onCard={handleCard}
               onQuiz={handleQuiz}
               onSelect={setSelectedResource}
+              onDelete={handleDelete}
             />
           ))}
           {!resources.length && (

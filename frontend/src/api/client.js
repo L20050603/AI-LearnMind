@@ -53,6 +53,9 @@ export const updateStudyPlan = (payload) => api.patch("/api/profile/study-plan",
 export const getCourses = () => api.get("/api/courses").then((res) => res.data);
 export const getActiveCourse = () => api.get("/api/courses/active").then((res) => res.data);
 export const switchActiveCourse = (course_code) => api.patch("/api/courses/active", { course_code }).then((res) => res.data);
+export const createCourse = (payload) => api.post("/api/courses", payload).then((res) => res.data);
+export const updateCourse = (courseCode, payload) => api.patch(`/api/courses/${courseCode}`, payload).then((res) => res.data);
+export const deleteCourse = (courseCode) => api.delete(`/api/courses/${courseCode}`).then((res) => res.data);
 
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
@@ -78,6 +81,7 @@ export const getResources = listResources;
 export const getResource = (id) => api.get(`/api/resources/${id}`).then((res) => res.data);
 export const toggleResourceFavorite = (id) => api.patch(`/api/resources/${id}/favorite`).then((res) => res.data);
 export const addResourceToPlan = (id) => api.post(`/api/resources/${id}/add-to-plan`).then((res) => res.data);
+export const deleteResource = (id) => api.delete(`/api/resources/${id}`).then((res) => res.data);
 export const getTodayResourceRecommendations = () => api.get("/api/resources/recommendations/today").then((res) => res.data);
 export const generateResourceCard = (resourceIdOrPayload) =>
   api.post("/api/resources/generate-card", typeof resourceIdOrPayload === "object" ? resourceIdOrPayload : { resourceId: resourceIdOrPayload }).then((res) => res.data);

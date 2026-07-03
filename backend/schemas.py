@@ -178,6 +178,19 @@ class CourseSwitchRequest(BaseModel):
     course_code: str | None = None
 
 
+class CourseManageRequest(BaseModel):
+    code: str | None = None
+    name: str = Field(min_length=1, max_length=80)
+    description: str = ""
+    point_names: list[str] = Field(default_factory=list)
+
+
+class CourseUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    description: str | None = None
+    point_names: list[str] | None = None
+
+
 class GoalUpdateRequest(BaseModel):
     goal: str
     target_score: int = Field(default=85, ge=0, le=100)

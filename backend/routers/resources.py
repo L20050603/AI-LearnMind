@@ -159,6 +159,18 @@ def toggle_favorite(resource_id: int, db: Session = Depends(get_db), current_use
     return serialize_resource(resource)
 
 
+@router.delete("/{resource_id}")
+def delete_resource(resource_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    resource = db.query(LearningResource).filter(LearningResource.id == resource_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    db.query(ResourceRecommendation).filter(ResourceRecommendation.resource_id == resource_id).delete()
+    log_event(db, "resource", name="delete_resource", action="delete", page="ResourceHunter", target_id=resource_id, user_id=current_user.id)
+    db.delete(resource)
+    db.commit()
+    return {"success": True, "message": "资源已删除"}
+
+
 @router.post("/{resource_id}/add-to-plan")
 def add_resource_to_plan(resource_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     resource = db.query(LearningResource).filter(LearningResource.id == resource_id).first()

@@ -44,3 +44,8 @@ def test_resource_plan_and_quiz_closed_loop(client, monkeypatch):
     result = submitted.json()
     assert result["totalCount"] == len(questions)
     assert result["xpGained"] >= 40
+
+    deleted = client.delete(f"/api/resources/{resource_id}")
+    assert deleted.status_code == 200
+    missing = client.get(f"/api/resources/{resource_id}")
+    assert missing.status_code == 404

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getAiStatus, updateProfile } from "../api/client.js";
+import { createCourse, deleteCourse, getAiStatus, updateCourse, updateProfile } from "../api/client.js";
 import { useToast } from "../components/common/ToastProvider.jsx";
 import GoalEditModal from "../components/profile/GoalEditModal.jsx";
 import StudyPlanEditModal from "../components/profile/StudyPlanEditModal.jsx";
@@ -35,6 +35,8 @@ export default function Settings() {
   const [planOpen, setPlanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [courseBusy, setCourseBusy] = useState(false);
+  const [courseEditor, setCourseEditor] = useState(null);
+  const [courseForm, setCourseForm] = useState({ code: "", name: "", description: "", pointText: "", lockPoints: false });
 
   useEffect(() => {
     getAiStatus()
@@ -78,6 +80,74 @@ export default function Settings() {
     }
   }
 
+  function openCreateCourse() {
+    setCourseEditor("create");
+    setCourseForm({
+      code: "",
+      name: "",
+      description: "",
+      pointText: "学习画像初始化\n基础概念\n核心方法\n典型案例\n综合挑战",
+      lockPoints: false,
+    });
+  }
+
+  function openEditCourse(course) {
+    setCourseEditor(course.code);
+    const names = (course.points || []).map((point) => point.name).join("\n");
+    setCourseForm({
+      code: course.code,
+      name: course.name,
+      description: course.description || "",
+      pointText: names || "",
+      lockPoints: Boolean(course.builtin),
+    });
+  }
+
+  async function saveCourse() {
+    if (!courseForm.name.trim()) {
+      showToast("请填写学习主题名称。", "error");
+      return;
+    }
+    setCourseBusy(true);
+    try {
+      const payload = {
+        code: courseForm.code.trim(),
+        name: courseForm.name.trim(),
+        description: courseForm.description.trim(),
+        point_names: courseForm.pointText.split("\n").map((item) => item.trim()).filter(Boolean),
+      };
+      if (courseEditor === "create") {
+        const data = await createCourse(payload);
+        await switchCourse(data.code);
+        showToast("学习主题已创建并切换。", "success");
+      } else {
+        await updateCourse(courseEditor, courseForm.lockPoints ? { name: payload.name, description: payload.description } : payload);
+        await refreshAll({ showLoading: true });
+        showToast("学习主题已保存。", "success");
+      }
+      setCourseEditor(null);
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "学习主题保存失败。", "error");
+    } finally {
+      setCourseBusy(false);
+    }
+  }
+
+  async function handleDeleteCourse(course) {
+    if (!course?.deletable) return;
+    if (!window.confirm(`确定删除学习主题“${course.name}”吗？历史学习数据不会删除，但该主题入口会移除。`)) return;
+    setCourseBusy(true);
+    try {
+      await deleteCourse(course.code);
+      await refreshAll({ showLoading: true });
+      showToast("学习主题已删除。", "success");
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "学习主题删除失败。", "error");
+    } finally {
+      setCourseBusy(false);
+    }
+  }
+
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });
@@ -95,34 +165,127 @@ export default function Settings() {
                 切换主题不会删除历史数据，不同课程使用不同知识点 ID，掌握度不会互相污染。
               </p>
             </div>
-            <select
-              disabled={courseBusy}
-              value={activeCourse?.active_course_code || profile.active_course_code || "artificial_intelligence"}
-              onChange={(event) => handleSwitchCourse(event.target.value)}
-              className="min-w-64 rounded-2xl border border-cyan-200/20 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none"
-            >
-              {courses.map((course) => (
-                <option key={course.code} value={course.code}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              <select
+                disabled={courseBusy}
+                value={activeCourse?.active_course_code || profile.active_course_code || "artificial_intelligence"}
+                onChange={(event) => handleSwitchCourse(event.target.value)}
+                className="min-w-64 rounded-2xl border border-cyan-200/20 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none"
+              >
+                {courses.map((course) => (
+                  <option key={course.code} value={course.code}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={openCreateCourse} className="action-button">
+                新增主题
+              </button>
+            </div>
           </div>
+
+          {courseEditor && (
+            <div className="mt-4 rounded-3xl border border-cyan-200/20 bg-slate-950/70 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="font-semibold text-white">{courseEditor === "create" ? "新增学习主题" : "编辑学习主题"}</h3>
+                <button type="button" onClick={() => setCourseEditor(null)} className="action-button">取消</button>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="block text-sm text-slate-300">
+                  <span className="mb-1 block text-slate-400">主题代码（英文/数字/下划线）</span>
+                  <input
+                    disabled={courseEditor !== "create"}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-white outline-none disabled:opacity-60"
+                    value={courseForm.code}
+                    onChange={(event) => setCourseForm({ ...courseForm, code: event.target.value })}
+                    placeholder="例如 data_structure"
+                  />
+                </label>
+                <label className="block text-sm text-slate-300">
+                  <span className="mb-1 block text-slate-400">主题名称</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-white outline-none"
+                    value={courseForm.name}
+                    onChange={(event) => setCourseForm({ ...courseForm, name: event.target.value })}
+                    placeholder="例如 数据结构"
+                  />
+                </label>
+                <label className="block text-sm text-slate-300 md:col-span-2">
+                  <span className="mb-1 block text-slate-400">主题描述</span>
+                  <textarea
+                    className="min-h-20 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-white outline-none"
+                    value={courseForm.description}
+                    onChange={(event) => setCourseForm({ ...courseForm, description: event.target.value })}
+                    placeholder="说明这个主题的学习范围和目标"
+                  />
+                </label>
+                <label className="block text-sm text-slate-300 md:col-span-2">
+                  <span className="mb-1 block text-slate-400">知识点列表（每行一个，自定义主题可编辑）</span>
+                  <textarea
+                    disabled={courseForm.lockPoints}
+                    className="min-h-36 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-white outline-none disabled:opacity-60"
+                    value={courseForm.pointText}
+                    onChange={(event) => setCourseForm({ ...courseForm, pointText: event.target.value })}
+                  />
+                  {courseForm.lockPoints && <span className="mt-1 block text-xs text-amber-200/80">内置主题保护知识点结构，只允许编辑名称和描述。</span>}
+                </label>
+              </div>
+              <button type="button" disabled={courseBusy} onClick={saveCourse} className="primary-submit mt-4 max-w-44">
+                {courseBusy ? "保存中..." : "保存主题"}
+              </button>
+            </div>
+          )}
+
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {courses.map((course) => (
-              <button
+              <div
                 key={course.code}
-                type="button"
-                disabled={courseBusy}
+                role="button"
+                tabIndex={0}
                 onClick={() => handleSwitchCourse(course.code)}
                 className={`rounded-3xl border p-4 text-left transition ${
                   course.code === activeCourse?.active_course_code ? "border-cyan-200/60 bg-cyan-400/15" : "border-white/10 bg-white/[0.045] hover:border-cyan-200/40"
                 }`}
               >
-                <p className="font-semibold text-white">{course.name}</p>
-                <p className="mt-1 text-xs text-cyan-100/70">{course.point_count} 个知识点</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-white">{course.name}</p>
+                    <p className="mt-1 text-xs text-cyan-100/70">
+                      {course.point_count} 个知识点 · {course.builtin ? "内置主题" : "自定义主题"}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-white/10 px-2 py-1 text-xs text-slate-300">
+                    {course.code === activeCourse?.active_course_code ? "当前" : "切换"}
+                  </span>
+                </div>
                 <p className="mt-2 text-sm leading-6 text-slate-300">{course.description}</p>
-              </button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openEditCourse(course);
+                    }}
+                    className="action-button"
+                  >
+                    编辑
+                  </span>
+                  {course.deletable && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteCourse(course);
+                      }}
+                      className="action-button border-rose-300/30 text-rose-100"
+                    >
+                      删除
+                    </span>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </div>

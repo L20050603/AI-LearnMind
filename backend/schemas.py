@@ -376,6 +376,7 @@ class RiskResponse(BaseModel):
     suggestions: list[str]
     triggered_rules: list[str]
     metrics: RiskMetrics
+    expert_system_view: dict[str, Any] = Field(default_factory=dict)
 
 
 class LevelCompleteRequest(BaseModel):

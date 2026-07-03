@@ -114,17 +114,74 @@ def run_agents(db, user_id: int | None = None):
         board.write(agent.run(context))
 
     entries = board.snapshot()
+    enriched_entries = []
+    for entry in entries:
+        name = entry["agent_name"]
+        enriched_entries.append(
+            {
+                **entry,
+                "role": {
+                    "ProfileAgent": "学习者画像专家",
+                    "Profile Agent": "学习者画像专家",
+                    "DiagnosisAgent": "知识诊断专家",
+                    "Diagnosis Agent": "知识诊断专家",
+                    "PlannerAgent": "路径规划专家",
+                    "Planner Agent": "路径规划专家",
+                    "EmotionAgent": "情绪识别专家",
+                    "Emotion Agent": "情绪识别专家",
+                    "InterventionAgent": "干预策略专家",
+                    "Intervention Agent": "干预策略专家",
+                    "ReportAgent": "报告生成专家",
+                    "Report Agent": "报告生成专家",
+                }.get(name, "子专家系统"),
+                "reads": ["学习记录", "任务", "错题", "情绪", "知识图谱", "风险评分"],
+                "writes": ["conclusion", "evidence", "suggestions", "confidence"],
+            }
+        )
+    entries = enriched_entries
     final_advice = _weighted_final_advice(entries, context)
+    blackboard_final_state = {
+        "学习画像": next((item["conclusion"] for item in entries if item["agent_name"] in {"ProfileAgent", "Profile Agent"}), "暂无画像"),
+        "薄弱点": next((item["conclusion"] for item in entries if item["agent_name"] in {"DiagnosisAgent", "Diagnosis Agent"}), "暂无诊断"),
+        "情绪状态": next((item["conclusion"] for item in entries if item["agent_name"] in {"EmotionAgent", "Emotion Agent"}), "暂无情绪结论"),
+        "风险状态": f"{context['risk']['risk_level']}（{context['risk']['risk_score']}）",
+        "推荐路径": context["today_path"].get("recommended", {}).get("title", "暂无推荐"),
+        "干预建议": next((item["conclusion"] for item in entries if item["agent_name"] in {"InterventionAgent", "Intervention Agent"}), "暂无干预建议"),
+        "报告摘要": next((item["conclusion"] for item in entries if item["agent_name"] in {"ReportAgent", "Report Agent"}), "暂无摘要"),
+    }
+    reasoning_trace = [
+        "ProfileAgent 读取学习记录并写入学习者画像。",
+        "DiagnosisAgent 根据知识图谱和错题定位薄弱点。",
+        "PlannerAgent 依据优先级公式生成今日路径。",
+        "EmotionAgent 通过情绪词典识别压力状态。",
+        "InterventionAgent 结合风险分和情绪状态给出干预。",
+        "ReportAgent 汇总黑板内容形成阶段性结论。",
+    ]
+    data_quality = {
+        "study_records": len(context["records"]),
+        "tasks": len(context["tasks"]),
+        "wrong_questions": len(context["wrong_questions"]),
+        "emotions": len(context["emotions"]),
+        "quality_note": "数据越多，协同诊断越稳定；无数据时系统会使用规则兜底。",
+    }
     cache_key = user_id or 0
     LATEST_RUNS[cache_key] = {
         "run_id": datetime.now(UTC).replace(tzinfo=None).isoformat(timespec="seconds"),
         "blackboard": entries,
+        "pipeline": [agent.__name__.split(".")[-1] for agent in AGENT_PIPELINE],
+        "blackboard_final_state": blackboard_final_state,
+        "reasoning_trace": reasoning_trace,
+        "data_quality": data_quality,
         "final_advice": final_advice,
     }
 
     return {
         "run_id": LATEST_RUNS[cache_key]["run_id"],
+        "pipeline": LATEST_RUNS[cache_key]["pipeline"],
         "blackboard": entries,
+        "blackboard_final_state": blackboard_final_state,
+        "reasoning_trace": reasoning_trace,
+        "data_quality": data_quality,
         "final_advice": final_advice,
     }
 

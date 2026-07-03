@@ -7,8 +7,10 @@ import AppShell from "./layouts/AppShell.jsx";
 import AgentLab from "./pages/AgentLab.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import FocusRoom from "./pages/FocusRoom.jsx";
+import InnovationDesignPage from "./pages/InnovationDesignPage.jsx";
 import KnowledgeGalaxyPage from "./pages/KnowledgeGalaxyPage.jsx";
 import KnowledgeGraphPage from "./pages/KnowledgeGraphPage.jsx";
+import LearnMindBotPage from "./pages/LearnMindBotPage.jsx";
 import LearningMapPage from "./pages/LearningMapPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import MultimodalLab from "./pages/MultimodalLab.jsx";
@@ -27,6 +29,8 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/innovation-design" element={<InnovationDesignPage />} />
+        <Route path="/bot" element={<LearnMindBotPage />} />
         <Route path="/map" element={<LearningMapPage />} />
         <Route path="/tasks" element={<TaskCenter />} />
         <Route path="/risk" element={<RiskCenterPage />} />

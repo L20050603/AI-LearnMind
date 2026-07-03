@@ -96,3 +96,75 @@ def weekly_report_markdown(db, user_id: int | None = None):
 
 综合置信度：{round(report['agent_summary']['confidence'] * 100)}%
 """
+
+
+def innovation_summary(db, user_id: int | None = None):
+    report = weekly_report(db, user_id)
+    design_motivation = "本系统面向大学生自主学习场景，通过学习数据采集、知识图谱建模、专家规则推理、多 Agent 黑板协同和情绪陪伴反馈，形成从学习诊断到个性化干预的智能闭环。"
+    system_functions = ["学习主题管理", "学习地图", "知识图谱", "知识星图", "风险诊断", "多 Agent 黑板协同", "资源猎手", "智能测验", "AI 导师", "专注空间", "情绪陪伴", "学习报告"]
+    intelligent_technologies = ["专家系统规则推理", "知识表示与知识图谱", "情绪词典分析", "学习者画像建模", "学习路径规划", "多 Agent 黑板协同", "本地资料检索与可选 LLM", "多模态交互模拟"]
+    course_mapping = [
+        "功能模拟：专家系统、规则库、推理机、解释器",
+        "行为模拟：LearnMind Bot 的感知—判断—动作反馈",
+        "机制模拟：信息—知识—策略—行为闭环",
+        "智能与情感：情绪识别、压力判断和陪伴反馈",
+        "智能机器人：虚拟学习陪伴机器人",
+        "人机共生 / 辅人律：辅助学生学习而不是替代学生主体",
+    ]
+    innovation_points = [
+        "可自由编辑学习主题的 CoursePack 机制",
+        "轻量级知识图谱驱动学习路径",
+        "专家系统可解释诊断",
+        "认知状态与情绪状态联合分析",
+        "多 Agent 黑板协同",
+        "学习陪伴机器人化表达",
+        "无 API Key 也可本地运行",
+        "可生成报告素材，方便学习复盘",
+    ]
+    framework_text = "用户层 → 数据感知层 → 知识表示层 → 专家推理层 → Agent 协同层 → 情绪陪伴层 → 行为反馈层 → 报告生成层。"
+    workflow_text = "用户输入学习记录、错题、情绪和测验后，系统更新学习画像；知识图谱定位薄弱点；专家规则评估风险；Agent 黑板整合结论；LearnMind Bot 和 AI 导师给出反馈；周报记录执行结果。"
+    diff_text = "普通题库软件重刷题但弱诊断，网课平台重资源但弱个性化，普通 AI 聊天助手缺少稳定画像和可解释推理；AI-LearnMind 将学习画像、知识图谱、专家规则、Agent 黑板、情绪陪伴和报告反馈联成闭环。"
+    markdown = f"""# AI-LearnMind 知学伴创新设计素材
+
+## 设计初衷
+{design_motivation}
+
+## 系统功能
+{chr(10).join(f"- {item}" for item in system_functions)}
+
+## 主要智能技术
+{chr(10).join(f"- {item}" for item in intelligent_technologies)}
+
+## 系统框架
+{framework_text}
+
+## 工作原理
+{workflow_text}
+
+## 与已有产品不同
+{diff_text}
+
+## 课程知识映射
+{chr(10).join(f"- {item}" for item in course_mapping)}
+
+## 创新点
+{chr(10).join(f"- {item}" for item in innovation_points)}
+
+## 后续展望
+- 进一步接入真实课程资料库和向量检索。
+- 引入更完整的学习干预策略评估。
+- 在保证隐私和合规的前提下增强语音、手势等多模态交互。
+
+当前演示主题：{report['course_name']}
+"""
+    return {
+        "title": "AI-LearnMind 知学伴创新设计素材",
+        "design_motivation": design_motivation,
+        "system_functions": system_functions,
+        "intelligent_technologies": intelligent_technologies,
+        "course_mapping": course_mapping,
+        "framework_text": framework_text,
+        "workflow_text": workflow_text,
+        "innovation_points": innovation_points,
+        "markdown": markdown,
+    }

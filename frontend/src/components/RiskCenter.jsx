@@ -11,6 +11,14 @@ export default function RiskCenter({ risk }) {
   if (!risk) return null;
   const score = Math.max(0, Math.min(100, risk.risk_score || 0));
   const levelColor = levelClass(risk.risk_level);
+  const expert = risk.expert_system_view || {};
+  const expertCards = [
+    ["知识库", expert.knowledge_base?.description, expert.knowledge_base?.items],
+    ["工作记忆 / 综合数据库", expert.working_memory?.description, expert.working_memory?.facts],
+    ["推理机", expert.inference_engine?.description, expert.inference_engine?.triggered_rules],
+    ["解释器", expert.explainer?.description, expert.explainer?.reasoning_chain],
+    ["用户接口", expert.interface?.description, expert.interface?.visible_modules],
+  ];
 
   return (
     <motion.section
@@ -120,6 +128,42 @@ export default function RiskCenter({ risk }) {
           )}
         </div>
       </div>
+
+      {!!Object.keys(expert).length && (
+        <div className="mt-4 rounded-3xl border border-cyan-200/15 bg-cyan-400/[0.045] p-5">
+          <div className="mb-4">
+            <p className="text-xs uppercase text-cyan-200/70">Expert System View</p>
+            <h3 className="text-xl font-bold text-white">专家系统结构解释</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              本模块把风险诊断拆解为知识库、工作记忆、推理机、解释器和用户接口，展示系统不是只给分数，而是基于规则和事实进行可解释推理。
+            </p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-5">
+            {expertCards.map(([title, description, items]) => (
+              <div key={title} className="rounded-3xl border border-white/10 bg-slate-950/55 p-4">
+                <p className="font-semibold text-cyan-100">{title}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-400">{description}</p>
+                <div className="mt-3 space-y-2">
+                  {(items || []).slice(0, 4).map((item) => (
+                    <p key={item} className="rounded-2xl border border-white/10 bg-white/[0.045] p-2 text-xs leading-5 text-slate-200">{item}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-3xl border border-violet-200/15 bg-violet-400/10 p-4">
+            <p className="font-semibold text-violet-100">推理链</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-4">
+              {(expert.explainer?.reasoning_chain || []).map((item, index) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-slate-950/50 p-3 text-sm leading-6 text-slate-200">
+                  <span className="text-xs text-violet-200/70">STEP {index + 1}</span>
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </motion.section>
   );
 }

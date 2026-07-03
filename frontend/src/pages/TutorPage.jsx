@@ -14,7 +14,7 @@ import PageContainer from "../layouts/PageContainer.jsx";
 
 const introMessage = {
   role: "assistant",
-  content: "我已经准备好了。你可以让我讲解当前关卡、生成可评分小测验，或者解析最近错题。",
+  content: "我是知学伴 AI 导师，会结合知识图谱、专家规则和本地资料库进行讲解；也可以把你的状态交给 LearnMind Bot 做陪伴式反馈。你可以让我讲解当前关卡、生成可评分小测验，或者解析最近错题。",
   mode: "local",
 };
 

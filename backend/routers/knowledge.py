@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import User
-from services.knowledge_graph_service import graph_edges, graph_node_payload, graph_points
+from services.knowledge_graph_service import explain_graph_point, graph_edges, graph_node_payload, graph_points
 from services.mastery_service import mastery_map
 from services.security import get_current_user
 from services.unlock_service import node_status
@@ -27,3 +27,11 @@ def get_knowledge_graph(db: Session = Depends(get_db), current_user: User = Depe
         ],
         "edges": graph_edges(course_code),
     }
+
+
+@router.get("/graph/explain/{point_id}")
+def explain_knowledge_point(point_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = explain_graph_point(point_id, current_user.active_course_code)
+    if not result:
+        raise HTTPException(status_code=404, detail="知识点不存在")
+    return result

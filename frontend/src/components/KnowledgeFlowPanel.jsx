@@ -21,7 +21,7 @@ function nodeColors(status) {
   return { border: "rgba(148,163,184,0.62)", background: "linear-gradient(135deg, rgba(51,65,85,0.72), rgba(15,23,42,0.92))", shadow: "0 0 18px rgba(148,163,184,0.20)" };
 }
 
-export default function KnowledgeFlowPanel({ graph, nodes = [] }) {
+export default function KnowledgeFlowPanel({ graph, nodes = [], onNodeSelect }) {
   const statusById = useMemo(() => new Map(nodes.map((node) => [String(node.id), node])), [nodes]);
 
   const flowNodes = useMemo(() => {
@@ -84,7 +84,7 @@ export default function KnowledgeFlowPanel({ graph, nodes = [] }) {
         </span>
       </div>
       <div className="knowledge-flow h-[360px] rounded-3xl border border-cyan-200/15 bg-[radial-gradient(circle_at_18%_22%,rgba(34,211,238,0.16),transparent_26%),radial-gradient(circle_at_76%_40%,rgba(168,85,247,0.14),transparent_28%),rgba(2,6,23,0.66)]">
-        <ReactFlow nodes={flowNodes} edges={flowEdges} fitView fitViewOptions={{ padding: 0.14, minZoom: 0.72, maxZoom: 1.15 }} minZoom={0.55} maxZoom={1.35} nodesDraggable={false} nodesConnectable={false} panOnScroll proOptions={{ hideAttribution: true }}>
+        <ReactFlow nodes={flowNodes} edges={flowEdges} fitView fitViewOptions={{ padding: 0.14, minZoom: 0.72, maxZoom: 1.15 }} minZoom={0.55} maxZoom={1.35} nodesDraggable={false} nodesConnectable={false} panOnScroll proOptions={{ hideAttribution: true }} onNodeClick={(_, node) => onNodeSelect?.(Number(node.id))}>
           <Background color="rgba(34,211,238,0.55)" gap={32} size={1.2} />
           <Controls showInteractive={false} />
         </ReactFlow>

@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from statistics import pstdev
 
-from models import EmotionCheckin, LearningTask, RiskReport, StudyRecord, User, WrongQuestion
+from models import EmotionCheckin, LearningTask, QuizAttempt, RiskReport, StudyRecord, User, WrongQuestion
 from services.emotion_service import analyze_emotion_text
 from services.explanation_service import build_explanation, risk_level
 from services.mastery_service import average_mastery, mastery_map
@@ -89,6 +89,59 @@ def learning_efficiency_score(db, user_id: int | None = None, course_code: str |
     return int(max(0, min(100, round(score))))
 
 
+def _expert_system_view(db, user_id, active_course, result_context, explanation, correctness, emotion):
+    points = graph_points(active_course)
+    point_ids = [point["id"] for point in points]
+    tasks = db.query(LearningTask).filter(LearningTask.user_id == (user_id or 1), LearningTask.knowledge_point_id.in_(point_ids)).all()
+    records = db.query(StudyRecord).filter(StudyRecord.user_id == (user_id or 1), StudyRecord.knowledge_point_id.in_(point_ids)).all()
+    wrong_count = db.query(WrongQuestion).filter(WrongQuestion.user_id == (user_id or 1), WrongQuestion.knowledge_point_id.in_(point_ids), WrongQuestion.fixed.is_(False)).count()
+    latest_emotion = db.query(EmotionCheckin).filter(EmotionCheckin.user_id == (user_id or 1)).order_by(EmotionCheckin.created_at.desc()).first()
+    quiz_count = db.query(QuizAttempt).filter(QuizAttempt.user_id == (user_id or 1)).count()
+    weak_points = sorted(points, key=lambda point: result_context.get("knowledge_mastery", {}).get(point["id"], 50))[:3]
+
+    facts = [
+        f"当前学习主题包含 {len(points)} 个知识点，知识图谱用于描述前置依赖和学习顺序。",
+        f"任务库中当前主题任务 {len(tasks)} 条，完成率 {result_context['task_completion']}%。",
+        f"学习记录 {len(records)} 条，正确率 {round(correctness['accuracy'] * 100)}%，未修复错题 {wrong_count} 条。",
+        f"最近情绪状态：{latest_emotion.stress_level if latest_emotion else emotion['stress_level']}，压力分 {emotion['stress_score']}。",
+        f"测验尝试记录 {quiz_count} 次，用于补充学习表现证据。",
+    ]
+    reasoning_chain = [
+        f"事实：任务完成率={result_context['task_completion']}%，错题率={round(correctness['wrong_rate'] * 100)}%，平均掌握度={round(result_context['average_mastery'])}%。",
+        f"规则匹配：{'; '.join(explanation['triggered_rules']) or '未触发高风险规则'}。",
+        f"中间结论：学习风险由认知薄弱、任务推进和情绪压力共同决定。",
+        f"最终建议：{explanation['suggestions'][0] if explanation['suggestions'] else '保持当前节奏，持续记录学习反馈。'}",
+    ]
+    return {
+        "knowledge_base": {
+            "description": "由课程知识点、知识图谱、风险规则、情绪规则和资源资料组成",
+            "items": [
+                f"课程知识点：{', '.join(point['name'] for point in points[:6])}",
+                "专家规则：任务完成率、错题率、掌握度、学习稳定性、压力水平",
+                "情绪词典：焦虑、疲惫、积极、拖延、求助等类别",
+                "知识图谱：前置关系、相关关系和易混淆关系",
+            ],
+        },
+        "working_memory": {
+            "description": "当前用户学习事实，包括任务、学习记录、错题、情绪和测验结果",
+            "facts": facts,
+        },
+        "inference_engine": {
+            "description": "根据规则权重、掌握度、错题率、任务完成率和压力状态进行推理",
+            "triggered_rules": explanation["triggered_rules"],
+        },
+        "explainer": {
+            "description": "解释为什么给出当前风险等级和建议",
+            "reasoning_chain": reasoning_chain,
+        },
+        "interface": {
+            "description": "前端风险中心、Agent 实验室和 AI 导师共同构成用户接口",
+            "visible_modules": ["风险诊断中心", "Agent 实验室", "AI 导师", "学习地图", "学习报告"],
+        },
+        "weak_points": [{"id": point["id"], "name": point["name"]} for point in weak_points],
+    }
+
+
 def latest_emotion_context(db, override=None, user_id: int | None = None):
     if override and (override.mood or override.text):
         return analyze_emotion_text(override.mood or "平稳", override.text or "")
@@ -133,6 +186,8 @@ def evaluate_risk(db, override=None, persist=True, user_id: int | None = None, c
         "study_stability": stability,
     }
     explanation = build_explanation(context)
+    mastery = mastery_map(db, user_id, active_course)
+    expert_context = {**context, "knowledge_mastery": mastery}
     result = {
         "risk_score": risk_score,
         "risk_level": risk_level(risk_score),
@@ -148,10 +203,11 @@ def evaluate_risk(db, override=None, persist=True, user_id: int | None = None, c
             "learning_efficiency": efficiency,
             "stress_score": emotion["stress_score"],
             "stress_level": emotion["stress_level"],
-            "knowledge_mastery": mastery_map(db, user_id, active_course),
+            "knowledge_mastery": mastery,
             "emotion_hits": emotion["matched_categories"],
         },
     }
+    result["expert_system_view"] = _expert_system_view(db, user_id, active_course, expert_context, explanation, correctness, emotion)
 
     if persist:
         report = RiskReport(

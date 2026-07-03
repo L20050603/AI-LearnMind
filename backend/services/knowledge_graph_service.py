@@ -6,6 +6,17 @@ from pathlib import Path
 GRAPH_PATH = Path(__file__).with_name("knowledge_graph.json")
 COURSE_PACKS_PATH = Path(__file__).with_name("course_packs.json")
 BUILTIN_COURSE_CODES = {"artificial_intelligence", "operating_system"}
+DEFAULT_EXTRA_RELATIONS = {
+    "artificial_intelligence": {
+        102: {"confusing_points": [103]},
+        105: {"related_points": [106]},
+        106: {"related_points": [105]},
+        107: {"related_points": [108]},
+        108: {"related_points": [107]},
+        109: {"related_points": [110]},
+        110: {"related_points": [109]},
+    }
+}
 
 
 @lru_cache(maxsize=1)
@@ -198,6 +209,7 @@ def max_downstream_count(course_code: str | None = None):
 
 def graph_edges(course_code: str | None = None):
     edges = []
+    code = normalize_course_code(course_code)
     for point in graph_points(course_code):
         for prereq_id in point.get("prerequisites", []):
             edges.append(
@@ -205,9 +217,16 @@ def graph_edges(course_code: str | None = None):
                     "id": f"{prereq_id}-{point['id']}",
                     "source": str(prereq_id),
                     "target": str(point["id"]),
+                    "type": "prerequisite",
+                    "relation": "prerequisite",
                     "label": "前置",
                 }
             )
+        extra = DEFAULT_EXTRA_RELATIONS.get(code, {}).get(point["id"], {})
+        for related_id in [*point.get("related_points", []), *extra.get("related_points", [])]:
+            edges.append({"id": f"rel-{point['id']}-{related_id}", "source": str(point["id"]), "target": str(related_id), "type": "related", "relation": "related", "label": "相关"})
+        for confusing_id in [*point.get("confusing_points", []), *extra.get("confusing_points", [])]:
+            edges.append({"id": f"conf-{point['id']}-{confusing_id}", "source": str(point["id"]), "target": str(confusing_id), "type": "confusing", "relation": "confusing", "label": "易混淆"})
     return edges
 
 
@@ -228,8 +247,36 @@ def graph_node_payload(point, status=None, mastery=None):
             "key_terms": point.get("key_terms", []),
             "common_mistakes": point.get("common_mistakes", []),
             "theory_mapping": point.get("theory_mapping", ""),
+            "learning_objectives": point.get("learning_objectives", [f"理解{point['name']}的核心概念", "能用例子说明适用场景", "能识别常见误区并完成小测验"]),
+            "resource_keywords": point.get("resource_keywords", point.get("key_terms", [])),
             "prerequisites": point["prerequisites"],
             "status": status,
             "mastery": mastery,
         },
+    }
+
+
+def explain_graph_point(point_id: int, course_code: str | None = None):
+    code = normalize_course_code(course_code)
+    point = graph_point(point_id, code)
+    if not point:
+        return None
+    points_by_id = {item["id"]: item for item in graph_points(code)}
+    extra = DEFAULT_EXTRA_RELATIONS.get(code, {}).get(point_id, {})
+    prerequisites = [points_by_id[item] for item in point.get("prerequisites", []) if item in points_by_id]
+    downstream = [item for item in points_by_id.values() if point_id in item.get("prerequisites", [])]
+    related_ids = [*point.get("related_points", []), *extra.get("related_points", [])]
+    confusing_ids = [*point.get("confusing_points", []), *extra.get("confusing_points", [])]
+    related = [points_by_id[item] for item in related_ids if item in points_by_id]
+    confusing = [points_by_id[item] for item in confusing_ids if item in points_by_id]
+    downstream_count_value = len(downstream)
+    return {
+        "point": graph_node_payload(point)["data"],
+        "why_important": f"{point['name']}考试权重为 {point.get('exam_weight', 0)}，难度 {point.get('difficulty', 1)}，是当前主题中的关键知识单元。",
+        "prerequisites": [{"id": item["id"], "name": item["name"]} for item in prerequisites],
+        "downstream": [{"id": item["id"], "name": item["name"]} for item in downstream],
+        "related": [{"id": item["id"], "name": item["name"]} for item in related],
+        "confusing": [{"id": item["id"], "name": item["name"]} for item in confusing],
+        "graph_based_strategy": "先补前置知识，再通过相关知识建立横向联系，最后用易混淆点进行辨析。",
+        "path_planning_reason": f"该知识点影响 {downstream_count_value} 个后续节点，系统会结合掌握度、考试权重和紧迫度决定优先级。",
     }

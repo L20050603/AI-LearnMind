@@ -60,6 +60,7 @@ export const deleteCourse = (courseCode) => api.delete(`/api/courses/${courseCod
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);
 export const getKnowledgeGraph = () => api.get("/api/knowledge/graph").then((res) => res.data);
+export const explainKnowledgePoint = (id) => api.get(`/api/knowledge/graph/explain/${id}`).then((res) => res.data);
 export const getKnowledgeStarMap = () => api.get("/api/star-map/knowledge").then((res) => res.data);
 export const getTodayLearningPath = () => api.get("/api/learning-path/today").then((res) => res.data);
 export const getAgentsRun = () => api.get("/api/agents/run").then((res) => res.data);
@@ -94,6 +95,9 @@ export const submitQuiz = (id, answersOrPayload) =>
 export const getQuizHistory = () => api.get("/api/quiz/history").then((res) => res.data);
 export const getWeeklyReport = () => api.get("/api/reports/weekly").then((res) => res.data);
 export const getReportMarkdown = () => api.get("/api/reports/export-md").then((res) => res.data);
+export const getInnovationSummary = () => api.get("/api/reports/innovation-summary").then((res) => res.data);
+export const getBotState = () => api.get("/api/bot/state").then((res) => res.data);
+export const interactBot = (payload) => api.post("/api/bot/interact", payload).then((res) => res.data);
 
 export const getTasks = () => api.get("/api/tasks").then((res) => res.data);
 export const createTask = (payload) => api.post("/api/tasks", payload).then((res) => res.data);

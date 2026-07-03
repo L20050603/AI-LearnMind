@@ -154,7 +154,7 @@ export default function Settings() {
   }
 
   return (
-    <PageContainer eyebrow="系统设置" title="系统设置与隐私" description="管理账号资料、学习主题、学习目标、AI Provider 和多模态权限。">
+    <PageContainer eyebrow="系统设置" title="系统设置与隐私" description="管理账号资料、学习主题、学习目标、AI Provider 和多模态权限；学习主题是专家系统知识库和知识图谱的基础。">
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="glass-panel p-5 lg:col-span-2">
           <div className="flex flex-wrap items-start justify-between gap-3">

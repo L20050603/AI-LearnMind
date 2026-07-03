@@ -3,6 +3,7 @@ import {
   BarChart3,
   Bot,
   BrainCircuit,
+  Cpu,
   FileText,
   Flag,
   Gauge,
@@ -19,6 +20,8 @@ import {
 
 const navItems = [
   { label: "学习驾驶舱", path: "/", icon: Gauge },
+  { label: "创新设计中心", path: "/innovation-design", icon: Cpu },
+  { label: "LearnMind Bot", path: "/bot", icon: Bot },
   { label: "学习地图", path: "/map", icon: Map },
   { label: "任务中心", path: "/tasks", icon: Flag },
   { label: "风险诊断", path: "/risk", icon: BarChart3 },

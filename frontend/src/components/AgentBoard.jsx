@@ -12,6 +12,8 @@ export default function AgentBoard() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const entries = agentRun?.blackboard || [];
   const finalAdvice = agentRun?.final_advice;
+  const finalState = agentRun?.blackboard_final_state || {};
+  const reasoningTrace = agentRun?.reasoning_trace || [];
 
   async function runAgents() {
     setRunning(true);
@@ -84,6 +86,36 @@ export default function AgentBoard() {
         </motion.div>
       )}
 
+      {!!Object.keys(finalState).length && (
+        <div className="glass-panel p-5">
+          <p className="text-xs uppercase text-cyan-200/60">Blackboard Final State</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">黑板最终状态</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {Object.entries(finalState).map(([key, value]) => (
+              <div key={key} className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+                <p className="text-xs text-cyan-200/70">{key}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-100">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!!reasoningTrace.length && (
+        <div className="glass-panel p-5">
+          <p className="text-xs uppercase text-violet-200/60">Why This Advice</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">为什么系统这样建议？</h2>
+          <div className="mt-4 grid gap-2 md:grid-cols-3">
+            {reasoningTrace.map((item, index) => (
+              <div key={item} className="rounded-2xl border border-violet-200/10 bg-violet-400/8 p-3 text-sm leading-6 text-slate-200">
+                <span className="text-xs text-violet-200/70">TRACE {index + 1}</span>
+                <p>{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 xl:grid-cols-2">
         {entries.slice(0, visibleCount || entries.length).map((entry, index) => (
           <motion.div
@@ -94,10 +126,17 @@ export default function AgentBoard() {
             className="rounded-3xl border border-white/10 bg-white/[0.045] p-5"
           >
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-cyan-100">{entry.agent_name}</h3>
+              <div>
+                <h3 className="font-semibold text-cyan-100">{entry.agent_name}</h3>
+                <p className="mt-1 text-xs text-slate-400">{entry.role || "子专家系统"}</p>
+              </div>
               <span className="rounded-full border border-cyan-200/20 bg-cyan-300/10 px-2 py-1 text-xs text-cyan-100">
                 {Math.round(entry.confidence * 100)}%
               </span>
+            </div>
+            <div className="mb-3 flex flex-wrap gap-2 text-xs text-slate-300">
+              {(entry.reads || []).slice(0, 4).map((item) => <span key={item} className="rounded-full border border-white/10 px-2 py-0.5">读：{item}</span>)}
+              {(entry.writes || []).slice(0, 2).map((item) => <span key={item} className="rounded-full border border-cyan-200/20 bg-cyan-400/8 px-2 py-0.5 text-cyan-100">写：{item}</span>)}
             </div>
             <p className="text-xs leading-5 text-slate-400">{entry.input_summary}</p>
             <p className="mt-3 text-sm leading-6 text-slate-100">{entry.conclusion}</p>

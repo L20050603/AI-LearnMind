@@ -78,6 +78,20 @@ export default function Dashboard() {
         <MetricCard label="当前压力等级" value={stats.stressLevel || "中等"} tone="violet" />
       </div>
 
+      <div className="glass-panel border-cyan-300/20 p-5">
+        <p className="text-xs uppercase text-cyan-200/70">Machine Intelligence Demo</p>
+        <h2 className="mt-1 text-2xl font-bold text-white">机器智能创新设计演示</h2>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">
+          从学习地图、风险诊断、Agent 黑板、LearnMind Bot 到报告生成，展示基于专家系统、知识图谱与情感计算的完整智能学习系统闭环。
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={() => navigate("/innovation-design")} className="action-button">查看创新设计中心</button>
+          <button type="button" onClick={runAgentAnalysis} className="action-button">运行 Agent 分析</button>
+          <button type="button" onClick={() => navigate("/bot")} className="action-button">进入 LearnMind Bot</button>
+          <button type="button" onClick={() => navigate("/reports")} className="action-button">生成报告素材</button>
+        </div>
+      </div>
+
       <div className="glass-panel p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

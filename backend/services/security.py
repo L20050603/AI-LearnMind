@@ -67,14 +67,14 @@ def _decode_fallback_token(token: str):
     try:
         _, body, signature = token.split(".", 2)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效。")
     expected = hmac.new(SECRET_KEY.encode("utf-8"), body.encode("utf-8"), hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, signature):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效。")
     padded = body + "=" * (-len(body) % 4)
     payload = json.loads(base64.urlsafe_b64decode(padded.encode("utf-8")).decode("utf-8"))
     if int(payload.get("exp", 0)) < int(datetime.now(UTC).timestamp()):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已过期")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已过期，请重新登录。")
     return payload
 
 
@@ -94,15 +94,15 @@ def decode_access_token(token: str):
             return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return _decode_fallback_token(token)
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效") from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效。") from exc
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     payload = decode_access_token(token)
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录状态无效。")
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在。")
     return user

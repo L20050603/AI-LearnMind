@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class StudentProfile(BaseModel):
@@ -139,6 +139,14 @@ class AuthRegisterRequest(BaseModel):
     email: str
     password: str = Field(min_length=6, max_length=128)
     name: str = Field(min_length=1, max_length=60)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str):
+        cleaned = value.strip()
+        if "@" not in cleaned or "." not in cleaned.split("@")[-1]:
+            raise ValueError("邮箱格式不正确")
+        return cleaned
 
 
 class AuthLoginRequest(BaseModel):

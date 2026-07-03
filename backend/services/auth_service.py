@@ -37,14 +37,18 @@ def auth_payload(user: User):
 
 
 def register_user(db: Session, payload: AuthRegisterRequest):
-    exists = db.query(User).filter(or_(User.username == payload.username, User.email == payload.email)).first()
+    username = payload.username.strip()
+    email = str(payload.email).strip().lower()
+    name = payload.name.strip()
+    exists = db.query(User).filter(or_(User.username == username, User.email == email)).first()
     if exists:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名或邮箱已存在")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名或邮箱已存在，可以直接去登录，或换一个用户名/邮箱。")
+
     user = User(
-        username=payload.username,
-        email=payload.email,
+        username=username,
+        email=email,
         password_hash=hash_password(payload.password),
-        name=payload.name,
+        name=name,
         level=1,
         xp=0,
         goal="期末冲刺 85+",
@@ -61,7 +65,8 @@ def register_user(db: Session, payload: AuthRegisterRequest):
 
 
 def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(User).filter(or_(User.username == username, User.email == username)).first()
+    account = username.strip()
+    user = db.query(User).filter(or_(User.username == account, User.email == account.lower())).first()
     if not user or not verify_password(password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误。")
     return auth_payload(user)

@@ -50,11 +50,12 @@ export default function QuizPage() {
     try {
       const data = await submitQuiz(quizId, answers);
       setResult(data);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       await refreshAll();
       setHistory(await getQuizHistory());
       showToast("测验已评分，掌握度、XP、风险和学习地图已刷新。", "success");
     } catch (error) {
-      showToast(error?.response?.data?.detail || "提交测验失败。", "error");
+      showToast(error?.response?.data?.detail || "提交测验失败，请检查答案格式或后端服务状态。", "error");
     } finally {
       setBusy(false);
     }
@@ -68,8 +69,8 @@ export default function QuizPage() {
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
-          <QuizPanel quiz={quiz} answers={answers} setAnswer={setAnswer} onSubmit={handleSubmit} busy={busy} result={result} />
           <QuizResultPanel result={result} />
+          <QuizPanel quiz={quiz} answers={answers} setAnswer={setAnswer} onSubmit={handleSubmit} busy={busy} result={result} />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => navigate("/resources")} className="action-button">
               返回资源猎手

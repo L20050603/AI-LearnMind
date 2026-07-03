@@ -1,7 +1,7 @@
 import QuizQuestionCard, { typeLabel } from "./QuizQuestionCard.jsx";
 
 function modeLabel(mode) {
-  if (mode === "llm") return "豆包/大模型生成";
+  if (mode === "llm") return "豆包 / 大模型生成";
   if (mode === "local-bank") return "本地备案题库";
   if (mode === "local") return "本地规则题库";
   return mode || "未知来源";
@@ -11,7 +11,8 @@ export default function QuizPanel({ quiz, answers, setAnswer, onSubmit, busy, re
   if (!quiz) return <div className="glass-panel p-8 text-center text-slate-400">正在读取测验...</div>;
 
   const typeCounts = (quiz.questions || []).reduce((acc, item) => {
-    acc[item.type || "single_choice"] = (acc[item.type || "single_choice"] || 0) + 1;
+    const type = item.type || "single_choice";
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
 
@@ -35,7 +36,7 @@ export default function QuizPanel({ quiz, answers, setAnswer, onSubmit, busy, re
         <div className="mt-4 flex flex-wrap gap-2">
           {Object.entries(typeCounts).map(([type, count]) => (
             <span key={type} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs text-slate-200">
-              {typeLabel(type)} × {count}
+              {typeLabel(type)} x {count}
             </span>
           ))}
           {(quiz.examPoints || []).slice(0, 6).map((point) => (

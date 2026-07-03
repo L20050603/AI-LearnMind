@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -227,7 +228,7 @@ class QuizGeneratePayload(BaseModel):
 
 
 class QuizSubmitPayload(BaseModel):
-    answers: dict[str, str] = Field(default_factory=dict)
+    answers: dict[str, Any] = Field(default_factory=dict)
 
 
 class FocusStartPayload(BaseModel):

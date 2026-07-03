@@ -11,24 +11,24 @@ export default function QuizResultPanel({ result }) {
   const riskScore = result.risk?.risk_score ?? result.risk?.riskScore ?? 0;
 
   return (
-    <div className="glass-panel p-5">
+    <div className="glass-panel border-cyan-200/30 bg-cyan-400/[0.07] p-5 shadow-[0_0_40px_rgba(34,211,238,0.16)]">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-cyan-200/70">测验结果</p>
+          <p className="text-sm text-cyan-200/80">测验结果</p>
           <h2 className="mt-1 text-3xl font-black text-white">{result.score} 分</h2>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
-          <div className="rounded-2xl bg-white/[0.045] px-4 py-3">
+          <div className="rounded-2xl bg-white/[0.06] px-4 py-3">
             <p className="text-xs text-slate-400">正确</p>
             <p className="mt-1 font-bold text-white">
               {result.correctCount}/{result.totalCount}
             </p>
           </div>
-          <div className="rounded-2xl bg-white/[0.045] px-4 py-3">
+          <div className="rounded-2xl bg-white/[0.06] px-4 py-3">
             <p className="text-xs text-slate-400">XP</p>
             <p className="mt-1 font-bold text-cyan-100">+{result.xpGained}</p>
           </div>
-          <div className="rounded-2xl bg-white/[0.045] px-4 py-3">
+          <div className="rounded-2xl bg-white/[0.06] px-4 py-3">
             <p className="text-xs text-slate-400">风险</p>
             <p className="mt-1 font-bold text-violet-100">{riskScore}</p>
           </div>

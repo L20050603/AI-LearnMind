@@ -57,13 +57,15 @@ export default function LevelActionBar({ level, compact = false }) {
         knowledgePointId: current.id,
         sourceType: "level",
         sourceId: current.id,
-        count: 5,
+        count: 3,
       });
+      const quizId = result.quiz?.id;
+      if (!quizId) throw new Error("后端没有返回测验 ID");
       const mode = result.mode === "llm" ? "大模型" : "本地备案题库";
       showToast(`${mode}小测验已生成，正在进入答题页。`, "success");
-      navigate(`/quiz/${result.quiz?.id}`);
+      navigate(`/quiz/${quizId}`);
     } catch (error) {
-      showToast(error?.response?.data?.detail || "生成小测验失败。", "error");
+      showToast(error?.response?.data?.detail || error?.message || "生成小测验失败，请确认后端服务和模型配置。", "error");
     } finally {
       setBusy(false);
     }

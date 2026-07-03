@@ -4,7 +4,7 @@ export function typeLabel(type) {
       single_choice: "单选题",
       multiple_choice: "多选题",
       calculation: "计算题",
-      scenario: "场景题",
+      scenario: "情境题",
       diagnosis: "错因诊断",
       short_answer: "简答题",
     }[type] || "测验题"

@@ -178,7 +178,7 @@ def generate_resource_quiz(resource_id: int, db: Session = Depends(get_db), curr
     resource = db.query(LearningResource).filter(LearningResource.id == resource_id).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
-    quiz, mode = create_quiz(db, resource.related_knowledge_point_id, source_type="resource", source_id=resource.id, count=5, user_id=current_user.id)
+    quiz, mode = create_quiz(db, resource.related_knowledge_point_id, source_type="resource", source_id=resource.id, count=3, user_id=current_user.id)
     log_event(db, "quiz", name="generate_resource_quiz", action="generate", page="ResourceHunter", target_id=resource.id, metadata={"quiz_id": quiz.id, "mode": mode}, user_id=current_user.id)
     db.commit()
     return {"quizId": quiz.id, "mode": mode, "title": quiz.title}

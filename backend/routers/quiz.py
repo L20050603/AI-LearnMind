@@ -15,13 +15,15 @@ from services.security import get_current_user
 router = APIRouter(prefix="/api/quiz", tags=["quiz"])
 
 
-def quiz_payload(db, quiz_id: int, user_id: int):
+def quiz_payload(db: Session, quiz_id: int, user_id: int):
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id, Quiz.user_id == user_id).first()
     if not quiz:
-        raise HTTPException(status_code=404, detail="Quiz not found")
+        raise HTTPException(status_code=404, detail="测验不存在或不属于当前用户")
+
     questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == quiz_id).order_by(QuizQuestion.id).all()
     parsed_questions = []
     modes = []
+
     for q in questions:
         raw_options = json.loads(q.options_json or "[]")
         if isinstance(raw_options, dict):
@@ -38,10 +40,13 @@ def quiz_payload(db, quiz_id: int, user_id: int):
             tags = []
             source_mode = ""
             quality_note = ""
+
         if source_mode:
             modes.append(source_mode)
+
         if not options and question_type in {"short_answer", "diagnosis"}:
             options = ["开放作答"]
+
         parsed_questions.append(
             {
                 "id": q.id,
@@ -54,6 +59,7 @@ def quiz_payload(db, quiz_id: int, user_id: int):
                 "qualityNote": quality_note,
             }
         )
+
     generation_mode = next((mode for mode in modes if mode), quiz.source_type)
     return {
         "id": quiz.id,
@@ -71,14 +77,34 @@ def quiz_payload(db, quiz_id: int, user_id: int):
 @router.post("/generate")
 def generate_quiz(payload: QuizGeneratePayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     quiz, mode = create_quiz(db, payload.knowledgePointId, payload.sourceType, payload.sourceId, payload.count, user_id=current_user.id)
-    log_event(db, "quiz", name="generate_quiz", action="generate", page="Quiz", target_id=payload.knowledgePointId, metadata={"quiz_id": quiz.id, "mode": mode}, user_id=current_user.id)
+    log_event(
+        db,
+        "quiz",
+        name="generate_quiz",
+        action="generate",
+        page="Quiz",
+        target_id=payload.knowledgePointId,
+        metadata={"quiz_id": quiz.id, "mode": mode},
+        user_id=current_user.id,
+    )
     db.commit()
     return {"quiz": quiz_payload(db, quiz.id, current_user.id), "mode": mode}
 
 
 @router.get("/history")
 def history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return [{"id": item.id, "quiz_id": item.quiz_id, "score": item.score, "correct_count": item.correct_count, "total_count": item.total_count, "xp_gained": item.xp_gained, "created_at": item.created_at} for item in quiz_history(db, current_user.id)]
+    return [
+        {
+            "id": item.id,
+            "quiz_id": item.quiz_id,
+            "score": item.score,
+            "correct_count": item.correct_count,
+            "total_count": item.total_count,
+            "xp_gained": item.xp_gained,
+            "created_at": item.created_at,
+        }
+        for item in quiz_history(db, current_user.id)
+    ]
 
 
 @router.get("/{quiz_id}")
@@ -90,7 +116,16 @@ def get_quiz(quiz_id: int, db: Session = Depends(get_db), current_user: User = D
 def submit_quiz(quiz_id: int, payload: QuizSubmitPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = grade_quiz(db, quiz_id, payload.answers, user_id=current_user.id)
     if not result:
-        raise HTTPException(status_code=404, detail="Quiz not found")
-    log_event(db, "quiz", name="submit_quiz", action="submit", page="QuizPage", target_id=quiz_id, metadata={"score": result["score"], "xp_gained": result["xpGained"]}, user_id=current_user.id)
+        raise HTTPException(status_code=404, detail="测验不存在或不属于当前用户")
+    log_event(
+        db,
+        "quiz",
+        name="submit_quiz",
+        action="submit",
+        page="QuizPage",
+        target_id=quiz_id,
+        metadata={"score": result["score"], "xp_gained": result["xpGained"]},
+        user_id=current_user.id,
+    )
     db.commit()
     return result

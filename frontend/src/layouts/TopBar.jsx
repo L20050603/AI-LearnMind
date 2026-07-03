@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 export default function TopBar({ onMenu }) {
-  const { dashboard, refreshAll, loading } = useAppData();
+  const { dashboard, refreshAll, loading, activeCourse } = useAppData();
   const { user } = useAuth();
   const [goalOpen, setGoalOpen] = useState(false);
   const student = dashboard?.student || user;
@@ -25,6 +25,7 @@ export default function TopBar({ onMenu }) {
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="nav-chip">{student?.name || "同学"}</span>
+          <span className="nav-chip hidden md:flex">{activeCourse?.active_course_name || student?.active_course_name || "人工智能与机器智能基础"}</span>
           <span className="nav-chip">Lv.{student?.level ?? 1}</span>
           <span className="nav-chip">{student?.xp ?? 0} XP</span>
           <button type="button" onClick={() => setGoalOpen(true)} className="nav-chip hidden sm:flex" title="编辑学习目标">

@@ -19,9 +19,9 @@ def _urgency(db, point_id: int, user_id: int | None = None):
     return min(100, 35 + len(open_tasks) * 15 + len(due_today) * 25)
 
 
-def priority_for_point(db, point, mastery_scores, user_id: int | None = None):
+def priority_for_point(db, point, mastery_scores, user_id: int | None = None, course_code: str | None = None):
     weakness_score = 100 - mastery_scores.get(point["id"], 0)
-    prerequisite_importance = downstream_count(point["id"]) / max(1, max_downstream_count()) * 100
+    prerequisite_importance = downstream_count(point["id"], course_code) / max(1, max_downstream_count(course_code)) * 100
     urgency = _urgency(db, point["id"], user_id)
     priority = (
         point["exam_weight"] * 0.35
@@ -46,14 +46,14 @@ def recommendation_strategy(point, mastery, prereq_details):
     return "当前掌握较稳，可作为后续关卡的前置支撑。"
 
 
-def ranked_candidates(db, user_id: int | None = None):
-    scores = mastery_map(db, user_id)
+def ranked_candidates(db, user_id: int | None = None, course_code: str | None = None):
+    scores = mastery_map(db, user_id, course_code)
     candidates = []
-    for point in graph_points():
+    for point in graph_points(course_code):
         status = node_status(point, scores)
         unlocked, prereq_details = prerequisites_status(point, scores)
         mastery = scores.get(point["id"], 0)
-        priority = priority_for_point(db, point, scores, user_id)
+        priority = priority_for_point(db, point, scores, user_id, course_code)
         candidates.append(
             {
                 "id": point["id"],
@@ -80,8 +80,8 @@ def ranked_candidates(db, user_id: int | None = None):
     )
 
 
-def today_learning_path(db, user_id: int | None = None):
-    candidates = ranked_candidates(db, user_id)
+def today_learning_path(db, user_id: int | None = None, course_code: str | None = None):
+    candidates = ranked_candidates(db, user_id, course_code)
     recommended = next((item for item in candidates if item["unlocked"] and item["status"] != "completed"), candidates[0])
     unlocked_focus = [item for item in candidates if item["unlocked"] and item["status"] != "completed"][:3]
 

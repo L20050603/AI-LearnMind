@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/tutor", tags=["tutor"])
 
 @router.post("/chat", response_model=TutorAIResponse)
 def chat(payload: TutorChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = chat_with_tutor(db, payload.message.strip(), payload.history, payload.selectedLevelId, current_user.id)
+    result = chat_with_tutor(db, payload.message.strip(), payload.history, payload.selectedLevelId, current_user.id, current_user.active_course_code)
     log_event(db, "ai", name="tutor_chat", action="ask", page="TutorPage", target_id=payload.selectedLevelId, metadata={"message": payload.message, "mode": result.get("mode")}, user_id=current_user.id)
     db.commit()
     return result
@@ -21,7 +21,7 @@ def chat(payload: TutorChatRequest, db: Session = Depends(get_db), current_user:
 
 @router.post("/explain", response_model=TutorAIResponse)
 def explain(payload: TutorExplainRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = explain_topic(db, payload.topic.strip(), payload.question.strip(), payload.selectedLevelId, current_user.id)
+    result = explain_topic(db, payload.topic.strip(), payload.question.strip(), payload.selectedLevelId, current_user.id, current_user.active_course_code)
     log_event(db, "ai", name="tutor_explain", action="explain", page="TutorPage", target_id=payload.selectedLevelId, metadata={"topic": payload.topic, "mode": result.get("mode")}, user_id=current_user.id)
     db.commit()
     return result
@@ -29,7 +29,7 @@ def explain(payload: TutorExplainRequest, db: Session = Depends(get_db), current
 
 @router.post("/explain-wrong-question", response_model=TutorAIResponse)
 def explain_wrong(payload: TutorWrongQuestionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = explain_wrong_question(db, payload.wrong_question_id, current_user.id)
+    result = explain_wrong_question(db, payload.wrong_question_id, current_user.id, current_user.active_course_code)
     log_event(db, "ai", name="explain_wrong_question", action="explain_wrong", page="TutorPage", target_id=payload.wrong_question_id, metadata={"mode": result.get("mode")}, user_id=current_user.id)
     db.commit()
     return result
@@ -37,7 +37,7 @@ def explain_wrong(payload: TutorWrongQuestionRequest, db: Session = Depends(get_
 
 @router.post("/generate-quiz", response_model=TutorAIResponse)
 def quiz(payload: TutorQuizRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = generate_quiz(db, payload.knowledge_point_id, payload.count, current_user.id)
+    result = generate_quiz(db, payload.knowledge_point_id, payload.count, current_user.id, current_user.active_course_code)
     log_event(db, "ai", name="generate_quiz", action="quiz", page="TutorPage", target_id=payload.knowledge_point_id, metadata={"count": payload.count, "mode": result.get("mode")}, user_id=current_user.id)
     db.commit()
     return result
@@ -45,7 +45,7 @@ def quiz(payload: TutorQuizRequest, db: Session = Depends(get_db), current_user:
 
 @router.post("/summarize-resource", response_model=TutorAIResponse)
 def summarize(payload: TutorResourceSummaryRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = summarize_resource(db, payload.resource_id, payload.title, payload.content, current_user.id)
+    result = summarize_resource(db, payload.resource_id, payload.title, payload.content, current_user.id, current_user.active_course_code)
     log_event(db, "ai", name="summarize_resource", action="summarize", page="TutorPage", metadata={"resource_id": payload.resource_id, "mode": result.get("mode")}, user_id=current_user.id)
     db.commit()
     return result

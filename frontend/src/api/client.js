@@ -50,6 +50,9 @@ export const getProfile = () => api.get("/api/profile").then((res) => res.data);
 export const updateProfile = (payload) => api.patch("/api/profile", payload).then((res) => res.data);
 export const updateGoal = (payload) => api.patch("/api/profile/goal", payload).then((res) => res.data);
 export const updateStudyPlan = (payload) => api.patch("/api/profile/study-plan", payload).then((res) => res.data);
+export const getCourses = () => api.get("/api/courses").then((res) => res.data);
+export const getActiveCourse = () => api.get("/api/courses/active").then((res) => res.data);
+export const switchActiveCourse = (course_code) => api.patch("/api/courses/active", { course_code }).then((res) => res.data);
 
 export const getDashboard = () => api.get("/api/dashboard").then((res) => res.data);
 export const getLearningMap = () => api.get("/api/learning-map").then((res) => res.data);

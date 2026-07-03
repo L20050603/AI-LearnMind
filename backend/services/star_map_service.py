@@ -6,25 +6,12 @@ from collections import defaultdict
 from sqlalchemy.orm import Session
 
 from models import LearningResource, Quiz, QuizAttempt, WrongQuestion
-from services.knowledge_graph_service import graph_points
+from services.knowledge_graph_service import get_course_pack, graph_points
 from services.mastery_service import get_knowledge_nodes
 
-
-CHAPTER_BY_POINT = {
-    1: "学习画像",
-    2: "课程基础",
-    3: "进程管理",
-    4: "进程管理",
-    5: "存储管理",
-    6: "存储管理",
-    7: "文件系统",
-    8: "综合挑战",
-}
-
-
 COURSE_CENTERS = {
-    "AI-LearnMind": [-12, -2, 0],
-    "操作系统": [0, 0, 0],
+    "artificial_intelligence": [0, 0, 0],
+    "operating_system": [0, 0, 0],
 }
 
 
@@ -74,13 +61,13 @@ def _risk_for_node(mastery: int, wrong_count: int, unlocked: bool, status: str):
     return int(max(0, min(100, risk)))
 
 
-def _position(index: int, total: int, point: dict):
-    course_center = COURSE_CENTERS.get(point["course"], [0, 0, 0])
-    chapter = CHAPTER_BY_POINT.get(point["id"], point["course"])
-    chapter_index = list(dict.fromkeys(CHAPTER_BY_POINT.values())).index(chapter)
-    angle = (index / max(1, total)) * math.tau + chapter_index * 0.48
-    radius = 6.5 + chapter_index * 2.2 + (point["difficulty"] / 100) * 3
-    y = (chapter_index - 2) * 1.8 + (point["exam_weight"] - 65) / 28
+def _position(index: int, total: int, point: dict, modules: list[str]):
+    course_center = COURSE_CENTERS.get(point.get("course_code"), [0, 0, 0])
+    module = point.get("module") or point["course"]
+    module_index = modules.index(module) if module in modules else 0
+    angle = (index / max(1, total)) * math.tau + module_index * 0.52
+    radius = 6.3 + module_index * 1.8 + (point["difficulty"] / 100) * 3.2
+    y = (module_index - max(1, len(modules)) / 2) * 1.35 + (point["exam_weight"] - 65) / 30
     return [
         round(course_center[0] + math.cos(angle) * radius, 2),
         round(course_center[1] + y, 2),
@@ -88,24 +75,20 @@ def _position(index: int, total: int, point: dict):
     ]
 
 
-def build_star_map(db: Session, user_id: int):
-    knowledge_nodes = {node["id"]: node for node in get_knowledge_nodes(db, user_id)}
+def build_star_map(db: Session, user_id: int, course_code: str | None = None):
+    knowledge_nodes = {node["id"]: node for node in get_knowledge_nodes(db, user_id, course_code)}
     resources, quizzes, wrong = _build_counts(db, user_id)
-    points = graph_points()[:50]
+    points = graph_points(course_code)[:50]
+    modules = list(dict.fromkeys(point.get("module") or point["course"] for point in points)) or ["默认星团"]
+    pack = get_course_pack(course_code) or {}
 
-    courses = []
-    seen_courses = set()
-    for point in points:
-        if point["course"] in seen_courses:
-            continue
-        seen_courses.add(point["course"])
-        courses.append(
-            {
-                "id": point["course"].lower().replace("-", "_").replace(" ", "_"),
-                "name": point["course"],
-                "center": COURSE_CENTERS.get(point["course"], [0, 0, 0]),
-            }
-        )
+    courses = [
+        {
+            "id": pack.get("code", course_code or "course"),
+            "name": pack.get("name", points[0]["course"] if points else "学习主题"),
+            "center": COURSE_CENTERS.get(pack.get("code"), [0, 0, 0]),
+        }
+    ]
 
     nodes = []
     for index, point in enumerate(points):
@@ -114,7 +97,7 @@ def build_star_map(db: Session, user_id: int):
         unlocked = bool(detail.get("unlocked", True))
         status = detail.get("status", "locked" if not unlocked else "unlocked")
         risk = _risk_for_node(mastery, wrong[point["id"]], unlocked, status)
-        x, y, z = _position(index, len(points), point)
+        x, y, z = _position(index, len(points), point, modules)
         size = round(0.78 + point["difficulty"] / 100 * 0.55 + (0.42 if point["type"] == "boss" else 0), 2)
         brightness = round(max(0.22, min(1.15, 0.24 + mastery / 105 + (0.15 if status == "current" else 0))), 2)
         nodes.append(
@@ -122,7 +105,8 @@ def build_star_map(db: Session, user_id: int):
                 "id": point["id"],
                 "title": point["name"],
                 "course": point["course"],
-                "chapter": CHAPTER_BY_POINT.get(point["id"], point["course"]),
+                "course_code": point.get("course_code"),
+                "chapter": point.get("module") or point["course"],
                 "type": point["type"],
                 "status": status,
                 "mastery": mastery,
@@ -130,6 +114,10 @@ def build_star_map(db: Session, user_id: int):
                 "difficulty": point["difficulty"],
                 "exam_weight": point["exam_weight"],
                 "estimated_minutes": point["estimated_minutes"],
+                "description": point.get("description", ""),
+                "key_terms": point.get("key_terms", []),
+                "common_mistakes": point.get("common_mistakes", []),
+                "theory_mapping": point.get("theory_mapping", ""),
                 "x": x,
                 "y": y,
                 "z": z,

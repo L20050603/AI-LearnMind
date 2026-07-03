@@ -21,8 +21,8 @@ def _source_payload(results):
     ]
 
 
-def _selected_level(db, selected_level_id=None):
-    nodes = get_knowledge_nodes(db)
+def _selected_level(db, selected_level_id=None, user_id: int | None = None, course_code: str | None = None):
+    nodes = get_knowledge_nodes(db, user_id, course_code)
     if selected_level_id:
         match = next((node for node in nodes if node["id"] == selected_level_id), None)
         if match:
@@ -30,16 +30,16 @@ def _selected_level(db, selected_level_id=None):
     return next((node for node in nodes if node["status"] in {"current", "boss"}), nodes[0] if nodes else None)
 
 
-def _context(db, query="", selected_level_id=None, user_id: int | None = None):
-    level = _selected_level(db, selected_level_id)
+def _context(db, query="", selected_level_id=None, user_id: int | None = None, course_code: str | None = None):
+    level = _selected_level(db, selected_level_id, user_id, course_code)
     search_query = query or (level.get("title") if level else "")
-    results = search_materials(search_query, limit=4)
-    risk = evaluate_risk(db, persist=False, user_id=user_id)
+    results = search_materials(search_query, limit=4, course_code=course_code)
+    risk = evaluate_risk(db, persist=False, user_id=user_id, course_code=course_code)
     return {
         "selected_level": level,
         "risk": risk,
         "sources": _source_payload(results),
-        "related_points": related_knowledge_points(results),
+        "related_points": related_knowledge_points(results, course_code),
     }
 
 
@@ -51,9 +51,9 @@ def _suggestions(topic):
     ]
 
 
-def chat_with_tutor(db, message, history=None, selected_level_id=None, user_id: int | None = None):
+def chat_with_tutor(db, message, history=None, selected_level_id=None, user_id: int | None = None, course_code: str | None = None):
     history = history or []
-    context = _context(db, message, selected_level_id, user_id)
+    context = _context(db, message, selected_level_id, user_id, course_code)
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for item in history[-8:]:
         role = item.get("role")
@@ -76,8 +76,8 @@ def local_chat_reply(db, question, history=None):
     return chat_with_tutor(db, question, history, None)
 
 
-def explain_topic(db, topic, question="", selected_level_id=None, user_id: int | None = None):
-    context = _context(db, f"{topic} {question}".strip(), selected_level_id, user_id)
+def explain_topic(db, topic, question="", selected_level_id=None, user_id: int | None = None, course_code: str | None = None):
+    context = _context(db, f"{topic} {question}".strip(), selected_level_id, user_id, course_code)
     result, mode = call_provider("explain_topic", topic, context)
     answer = result.get("answer") or result.get("explanation") or ""
     return {
@@ -94,7 +94,7 @@ def explain_topic(db, topic, question="", selected_level_id=None, user_id: int |
     }
 
 
-def explain_wrong_question(db, wrong_question_id=None, user_id: int | None = None):
+def explain_wrong_question(db, wrong_question_id=None, user_id: int | None = None, course_code: str | None = None):
     query = db.query(WrongQuestion).order_by(WrongQuestion.created_at.desc())
     if user_id is not None:
         query = query.filter(WrongQuestion.user_id == user_id)
@@ -108,7 +108,7 @@ def explain_wrong_question(db, wrong_question_id=None, user_id: int | None = Non
             "sources": [],
             "suggestedQuestions": ["How do I add a wrong question?", "How should I repair mistakes?"],
         }
-    context = _context(db, wrong.question, wrong.knowledge_point_id, user_id)
+    context = _context(db, wrong.question, wrong.knowledge_point_id, user_id, course_code)
     result, mode = call_provider("explain_wrong_question", wrong.question, wrong.reason, context)
     answer = result.get("answer") or ""
     return {
@@ -120,10 +120,10 @@ def explain_wrong_question(db, wrong_question_id=None, user_id: int | None = Non
     }
 
 
-def generate_quiz(db, knowledge_point_id, count=5, user_id: int | None = None):
-    level = _selected_level(db, knowledge_point_id)
+def generate_quiz(db, knowledge_point_id, count=5, user_id: int | None = None, course_code: str | None = None):
+    level = _selected_level(db, knowledge_point_id, user_id, course_code)
     topic = level.get("title") if level else f"knowledge point {knowledge_point_id}"
-    context = _context(db, topic, knowledge_point_id, user_id)
+    context = _context(db, topic, knowledge_point_id, user_id, course_code)
     quiz, mode = call_provider("generate_quiz", topic, context, count)
     return {
         "answer": f"Generated {len(quiz)} quiz questions for {topic}.",
@@ -135,7 +135,7 @@ def generate_quiz(db, knowledge_point_id, count=5, user_id: int | None = None):
     }
 
 
-def summarize_resource(db, resource_id=None, title="", content="", user_id: int | None = None):
+def summarize_resource(db, resource_id=None, title="", content="", user_id: int | None = None, course_code: str | None = None):
     materials = load_materials()
     material = next((item for item in materials if item["id"] == resource_id), None)
     if material:
@@ -144,7 +144,7 @@ def summarize_resource(db, resource_id=None, title="", content="", user_id: int 
         selected_level_id = material.get("knowledge_point_id")
     else:
         selected_level_id = None
-    context = _context(db, f"{title} {content[:120]}", selected_level_id, user_id)
+    context = _context(db, f"{title} {content[:120]}", selected_level_id, user_id, course_code)
     summary, mode = call_provider("summarize_resource", title or "resource", content or "", context)
     answer = summary.get("summary") if isinstance(summary, dict) else str(summary)
     return {

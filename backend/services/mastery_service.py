@@ -49,7 +49,7 @@ def point_metrics(db, point_id: int, user_id: int | None = None):
 
 def calculate_point_mastery(db, point, user_id: int | None = None):
     metrics = point_metrics(db, point["id"], user_id)
-    base_mastery = 100 if point["id"] == 1 else max(12, 72 - point["difficulty"] * 0.45)
+    base_mastery = 100 if point["id"] in {1, 101} else max(12, 72 - point["difficulty"] * 0.45)
     if metrics["review_count"] == 0 and metrics["task_count"] == 0 and metrics["open_wrong_count"] == 0:
         mastery = base_mastery
     else:
@@ -65,19 +65,19 @@ def calculate_point_mastery(db, point, user_id: int | None = None):
     return int(max(0, min(100, round(mastery))))
 
 
-def mastery_map(db, user_id: int | None = None):
-    return {point["id"]: calculate_point_mastery(db, point, user_id) for point in graph_points()}
+def mastery_map(db, user_id: int | None = None, course_code: str | None = None):
+    return {point["id"]: calculate_point_mastery(db, point, user_id) for point in graph_points(course_code)}
 
 
-def average_mastery(db, user_id: int | None = None):
-    values = list(mastery_map(db, user_id).values())
+def average_mastery(db, user_id: int | None = None, course_code: str | None = None):
+    values = list(mastery_map(db, user_id, course_code).values())
     return sum(values) / max(1, len(values))
 
 
-def get_knowledge_nodes(db, user_id: int | None = None):
-    scores = mastery_map(db, user_id)
+def get_knowledge_nodes(db, user_id: int | None = None, course_code: str | None = None):
+    scores = mastery_map(db, user_id, course_code)
     nodes = []
-    for point in graph_points():
+    for point in graph_points(course_code):
         mastery = scores.get(point["id"], 0)
         unlocked, prereq_details = prerequisites_status(point, scores)
         nodes.append(

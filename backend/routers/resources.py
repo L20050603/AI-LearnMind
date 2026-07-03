@@ -16,6 +16,7 @@ from services.resources.resource_ranker import score_resource
 from services.resources.resource_recommender import today_recommendations
 from services.resources.web_search_provider import WebSearchProvider
 from services.security import get_current_user
+from services.knowledge_graph_service import get_course_pack
 
 router = APIRouter(prefix="/api/resources", tags=["resources"])
 
@@ -72,7 +73,9 @@ def upsert_resource(db, item):
 
 @router.post("/search")
 def search_resources(payload: ResourceSearchPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    queries = build_resource_queries(payload.knowledgePointId, payload.course, payload.goal, payload.resourceTypes, payload.query)
+    active_pack = get_course_pack(current_user.active_course_code) or {}
+    course_name = payload.course or active_pack.get("name", "")
+    queries = build_resource_queries(payload.knowledgePointId, course_name, payload.goal, payload.resourceTypes, payload.query)
     provider = WebSearchProvider()
     seen = set()
     saved = []
@@ -82,6 +85,8 @@ def search_resources(payload: ResourceSearchPayload, db: Session = Depends(get_d
             if key in seen:
                 continue
             seen.add(key)
+            if not item.get("related_course"):
+                item["related_course"] = course_name
             saved.append(upsert_resource(db, item))
             if len(saved) >= payload.limit:
                 break
@@ -91,7 +96,13 @@ def search_resources(payload: ResourceSearchPayload, db: Session = Depends(get_d
         db.add(ResourceRecommendation(user_id=current_user.id, resource_id=resource.id, knowledge_point_id=resource.related_knowledge_point_id, reason="资源质量较高，适合当前复习目标", priority=max(10, resource.quality_score - index)))
     log_event(db, "resource", name="search_resource", action="search", page="ResourceHunter", target_id=payload.knowledgePointId, metadata={"queries": queries, "count": len(saved)}, user_id=current_user.id)
     db.commit()
-    return {"queryList": queries, "mode": "local" if not provider.api_key else "web", "resources": [serialize_resource(resource) for resource in saved]}
+    return {
+        "queryList": queries,
+        "mode": provider.last_mode,
+        "provider": provider.last_provider,
+        "legal_notice": provider.legal_notice,
+        "resources": [serialize_resource(resource) for resource in saved],
+    }
 
 
 @router.post("/crawl")

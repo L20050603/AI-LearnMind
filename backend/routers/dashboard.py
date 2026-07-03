@@ -14,6 +14,6 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 def get_dashboard(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return {
         "student": get_student(db, current_user.id),
-        "stats": calculate_dashboard_stats(db, current_user.id),
-        "agentMessages": agent_messages(db, current_user.id),
+        "stats": calculate_dashboard_stats(db, current_user.id, current_user.active_course_code),
+        "agentMessages": agent_messages(db, current_user.id, current_user.active_course_code),
     }

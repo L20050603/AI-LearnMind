@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import User, utc_now
-from schemas import GoalUpdateRequest, ProfileUpdateRequest, StudyPlanUpdateRequest, UserPublic
+from schemas import CourseSwitchRequest, GoalUpdateRequest, ProfileUpdateRequest, StudyPlanUpdateRequest, UserPublic
 from services.auth_service import user_public
+from services.knowledge_graph_service import get_course_pack
 from services.security import get_current_user
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
@@ -43,6 +44,18 @@ def update_study_plan(payload: StudyPlanUpdateRequest, db: Session = Depends(get
     current_user.weekly_minutes_goal = payload.weekly_minutes_goal
     current_user.preferred_study_time = payload.preferred_study_time
     current_user.study_style = payload.study_style
+    current_user.updated_at = utc_now()
+    db.commit()
+    db.refresh(current_user)
+    return user_public(current_user)
+
+
+@router.patch("/active-course", response_model=UserPublic)
+def update_active_course(payload: CourseSwitchRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    course_code = payload.active_course_code or payload.course_code
+    if not get_course_pack(course_code):
+        raise HTTPException(status_code=400, detail="不支持的学习主题")
+    current_user.active_course_code = course_code
     current_user.updated_at = utc_now()
     db.commit()
     db.refresh(current_user)

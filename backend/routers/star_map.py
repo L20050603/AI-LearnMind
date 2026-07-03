@@ -11,4 +11,4 @@ router = APIRouter(prefix="/api/star-map", tags=["star-map"])
 
 @router.get("/knowledge")
 def get_knowledge_star_map(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return build_star_map(db, current_user.id)
+    return build_star_map(db, current_user.id, current_user.active_course_code)

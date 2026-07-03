@@ -17,9 +17,11 @@ def _tokens(text):
     return [chunk for chunk in chunks if chunk.strip()]
 
 
-def search_materials(query, limit=3):
+def search_materials(query, limit=3, course_code=None):
     query = (query or "").strip()
     materials = load_materials()
+    if course_code:
+        materials = [item for item in materials if item.get("course_code") == course_code]
     if not query:
         return []
 
@@ -49,7 +51,7 @@ def search_materials(query, limit=3):
 
     if not scored:
         graph_matches = [
-            point for point in graph_points() if point["name"] in query or query in point["name"]
+            point for point in graph_points(course_code) if point["name"] in query or query in point["name"]
         ]
         if graph_matches:
             ids = {point["id"] for point in graph_matches}
@@ -58,6 +60,6 @@ def search_materials(query, limit=3):
     return sorted(scored, key=lambda item: item["score"], reverse=True)[:limit]
 
 
-def related_knowledge_points(results):
-    graph = {point["id"]: point["name"] for point in graph_points()}
+def related_knowledge_points(results, course_code=None):
+    graph = {point["id"]: point["name"] for point in graph_points(course_code)}
     return [graph.get(item["knowledge_point_id"], item["title"]) for item in results]

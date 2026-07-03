@@ -11,4 +11,4 @@ router = APIRouter(prefix="/api/learning-path", tags=["learning-path"])
 
 @router.get("/today")
 def get_today_learning_path(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return today_learning_path(db, current_user.id)
+    return today_learning_path(db, current_user.id, current_user.active_course_code)

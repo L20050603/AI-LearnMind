@@ -4,10 +4,13 @@ from sqlalchemy.orm import Session
 
 from models import User
 from schemas import AuthRegisterRequest
+from services.knowledge_graph_service import get_course_pack, normalize_course_code
 from services.security import create_access_token, hash_password, verify_password
 
 
 def user_public(user: User):
+    course_code = normalize_course_code(getattr(user, "active_course_code", None))
+    course = get_course_pack(course_code) or {}
     return {
         "id": user.id,
         "username": user.username or "",
@@ -25,6 +28,8 @@ def user_public(user: User):
         "weekly_minutes_goal": user.weekly_minutes_goal or 540,
         "preferred_study_time": user.preferred_study_time or "",
         "study_style": user.study_style or "",
+        "active_course_code": course_code,
+        "active_course_name": course.get("name", "人工智能与机器智能基础"),
     }
 
 
@@ -57,6 +62,7 @@ def register_user(db: Session, payload: AuthRegisterRequest):
         weekly_minutes_goal=540,
         preferred_study_time="晚上 19:00-22:00",
         study_style="闯关 + 测验驱动",
+        active_course_code="artificial_intelligence",
     )
     db.add(user)
     db.commit()

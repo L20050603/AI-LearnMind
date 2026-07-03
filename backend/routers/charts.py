@@ -11,4 +11,4 @@ router = APIRouter(prefix="/api", tags=["charts"])
 
 @router.get("/charts")
 def get_charts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return chart_payload(db, current_user.id)
+    return chart_payload(db, current_user.id, current_user.active_course_code)

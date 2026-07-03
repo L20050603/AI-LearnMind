@@ -1,32 +1,52 @@
 from datetime import date, datetime, timedelta
 from statistics import pstdev
 
-from models import EmotionCheckin, LearningTask, RiskReport, StudyRecord, WrongQuestion
+from models import EmotionCheckin, LearningTask, RiskReport, StudyRecord, User, WrongQuestion
 from services.emotion_service import analyze_emotion_text
 from services.explanation_service import build_explanation, risk_level
 from services.mastery_service import average_mastery, mastery_map
+from services.knowledge_graph_service import graph_points
 
 
 def _week_start():
     return datetime.combine(date.today() - timedelta(days=6), datetime.min.time())
 
 
-def task_completion_rate(db, user_id: int | None = None):
+def _active_course_code(db, user_id: int | None = None, course_code: str | None = None):
+    if course_code:
+        return course_code
+    if user_id is not None:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and getattr(user, "active_course_code", None):
+            return user.active_course_code
+    return None
+
+
+def _filter_course(query, model, course_code: str | None = None):
+    point_ids = [point["id"] for point in graph_points(course_code)]
+    return query.filter(model.knowledge_point_id.in_(point_ids)) if point_ids else query
+
+
+def task_completion_rate(db, user_id: int | None = None, course_code: str | None = None):
     query = db.query(LearningTask)
+    query = _filter_course(query, LearningTask, _active_course_code(db, user_id, course_code))
     if user_id is not None:
         query = query.filter(LearningTask.user_id == user_id)
     tasks = query.all()
     return round(sum(1 for task in tasks if task.completed) / max(1, len(tasks)) * 100)
 
 
-def correctness_metrics(db, user_id: int | None = None):
+def correctness_metrics(db, user_id: int | None = None, course_code: str | None = None):
     query = db.query(StudyRecord)
+    active_course = _active_course_code(db, user_id, course_code)
+    query = _filter_course(query, StudyRecord, active_course)
     if user_id is not None:
         query = query.filter(StudyRecord.user_id == user_id)
     records = query.all()
     correct = sum(record.correct_count for record in records)
     wrong = sum(record.wrong_count for record in records)
     wrong_query = db.query(WrongQuestion).filter(WrongQuestion.fixed.is_(False))
+    wrong_query = _filter_course(wrong_query, WrongQuestion, active_course)
     if user_id is not None:
         wrong_query = wrong_query.filter(WrongQuestion.user_id == user_id)
     open_wrong = wrong_query.count()
@@ -42,8 +62,9 @@ def correctness_metrics(db, user_id: int | None = None):
     }
 
 
-def study_stability_score(db, user_id: int | None = None):
+def study_stability_score(db, user_id: int | None = None, course_code: str | None = None):
     query = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start())
+    query = _filter_course(query, StudyRecord, _active_course_code(db, user_id, course_code))
     if user_id is not None:
         query = query.filter(StudyRecord.user_id == user_id)
     records = query.all()
@@ -60,10 +81,10 @@ def study_stability_score(db, user_id: int | None = None):
     return int(max(0, min(100, round(100 - volatility * 38))))
 
 
-def learning_efficiency_score(db, user_id: int | None = None):
-    completion = task_completion_rate(db, user_id)
-    metrics = correctness_metrics(db, user_id)
-    stability = study_stability_score(db, user_id)
+def learning_efficiency_score(db, user_id: int | None = None, course_code: str | None = None):
+    completion = task_completion_rate(db, user_id, course_code)
+    metrics = correctness_metrics(db, user_id, course_code)
+    stability = study_stability_score(db, user_id, course_code)
     score = completion * 0.35 + metrics["accuracy"] * 100 * 0.40 + stability * 0.25
     return int(max(0, min(100, round(score))))
 
@@ -86,12 +107,13 @@ def latest_emotion_context(db, override=None, user_id: int | None = None):
     return analyze_emotion_text("平稳", "")
 
 
-def evaluate_risk(db, override=None, persist=True, user_id: int | None = None):
-    completion = task_completion_rate(db, user_id)
-    correctness = correctness_metrics(db, user_id)
-    avg_mastery = average_mastery(db, user_id)
-    stability = study_stability_score(db, user_id)
-    efficiency = learning_efficiency_score(db, user_id)
+def evaluate_risk(db, override=None, persist=True, user_id: int | None = None, course_code: str | None = None):
+    active_course = _active_course_code(db, user_id, course_code)
+    completion = task_completion_rate(db, user_id, active_course)
+    correctness = correctness_metrics(db, user_id, active_course)
+    avg_mastery = average_mastery(db, user_id, active_course)
+    stability = study_stability_score(db, user_id, active_course)
+    efficiency = learning_efficiency_score(db, user_id, active_course)
     emotion = latest_emotion_context(db, override, user_id)
 
     risk_score = round(
@@ -126,7 +148,7 @@ def evaluate_risk(db, override=None, persist=True, user_id: int | None = None):
             "learning_efficiency": efficiency,
             "stress_score": emotion["stress_score"],
             "stress_level": emotion["stress_level"],
-            "knowledge_mastery": mastery_map(db, user_id),
+            "knowledge_mastery": mastery_map(db, user_id, active_course),
             "emotion_hits": emotion["matched_categories"],
         },
     }

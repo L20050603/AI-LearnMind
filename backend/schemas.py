@@ -9,6 +9,8 @@ class StudentProfile(BaseModel):
     level: int
     xp: int
     goal: str
+    active_course_code: str = "artificial_intelligence"
+    active_course_name: str = "人工智能与机器智能基础"
     target_score: int = 85
     exam_date: str = ""
     daily_minutes_goal: int = 90
@@ -131,6 +133,8 @@ class UserPublic(BaseModel):
     weekly_minutes_goal: int = 540
     preferred_study_time: str = "晚上 19:00-22:00"
     study_style: str = "闯关 + 测验驱动"
+    active_course_code: str = "artificial_intelligence"
+    active_course_name: str = "人工智能与机器智能基础"
 
     model_config = {"from_attributes": True}
 
@@ -167,6 +171,11 @@ class ProfileUpdateRequest(BaseModel):
     major: str | None = None
     grade: str | None = None
     email: str | None = None
+
+
+class CourseSwitchRequest(BaseModel):
+    active_course_code: str | None = None
+    course_code: str | None = None
 
 
 class GoalUpdateRequest(BaseModel):

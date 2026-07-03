@@ -1,6 +1,11 @@
 import KnowledgePointSelect from "../common/KnowledgePointSelect.jsx";
 
-export default function ResourceSearchBox({ selectedLevel, learningMap, setSelectedLevel, form, setForm, onSearch, busy }) {
+function placeholderFor(activeCourse) {
+  if (activeCourse?.active_course_code === "operating_system") return "例如 LRU、缺页、银行家算法";
+  return "例如 专家系统、知识图谱、机器学习、情绪识别";
+}
+
+export default function ResourceSearchBox({ selectedLevel, learningMap, setSelectedLevel, form, setForm, onSearch, busy, activeCourse }) {
   function toggleType(type) {
     setForm((current) => {
       const exists = current.resourceTypes.includes(type);
@@ -13,7 +18,7 @@ export default function ResourceSearchBox({ selectedLevel, learningMap, setSelec
 
   return (
     <div className="glass-panel p-5">
-      <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)_170px_190px_auto]">
+      <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)_220px_190px_auto]">
         <KnowledgePointSelect
           value={selectedLevel?.id}
           onChange={(id) => setSelectedLevel(learningMap.find((node) => node.id === id))}
@@ -25,15 +30,15 @@ export default function ResourceSearchBox({ selectedLevel, learningMap, setSelec
             value={form.query}
             onChange={(event) => setForm({ ...form, query: event.target.value })}
             className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/70"
-            placeholder="例如 LRU、缺页、银行家算法"
+            placeholder={placeholderFor(activeCourse)}
           />
         </label>
         <label className="block text-sm text-slate-300">
-          <span className="mb-1.5 block text-slate-400">课程</span>
+          <span className="mb-1.5 block text-slate-400">当前主题</span>
           <input
-            value={form.course}
-            onChange={(event) => setForm({ ...form, course: event.target.value })}
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/70"
+            value={activeCourse?.active_course_name || form.course}
+            readOnly
+            className="w-full cursor-not-allowed rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-300 outline-none"
           />
         </label>
         <label className="block text-sm text-slate-300">

@@ -2,12 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import {
   getCharts,
+  getActiveCourse,
+  getCourses,
   getCurrentRisk,
   getDashboard,
   getKnowledgeGraph,
   getLearningMap,
   getTasks,
   getTodayLearningPath,
+  switchActiveCourse,
   getWrongQuestions,
 } from "../api/client.js";
 
@@ -24,13 +27,15 @@ export function AppDataProvider({ children }) {
   const [todayPath, setTodayPath] = useState(null);
   const [agentRun, setAgentRun] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [activeCourse, setActiveCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const refreshAll = useCallback(async ({ showLoading = false } = {}) => {
     try {
       if (showLoading) setLoading(true);
-      const [dashboardData, mapData, chartData, taskData, wrongData, riskData, graphData, pathData] = await Promise.all([
+      const [dashboardData, mapData, chartData, taskData, wrongData, riskData, graphData, pathData, coursesData, activeCourseData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
         getCharts(),
@@ -39,6 +44,8 @@ export function AppDataProvider({ children }) {
         getCurrentRisk(),
         getKnowledgeGraph(),
         getTodayLearningPath(),
+        getCourses(),
+        getActiveCourse(),
       ]);
 
       setDashboard(dashboardData);
@@ -49,6 +56,8 @@ export function AppDataProvider({ children }) {
       setRisk(riskData);
       setKnowledgeGraph(graphData);
       setTodayPath(pathData);
+      setCourses(coursesData || []);
+      setActiveCourse(activeCourseData || null);
       setSelectedLevel((current) => {
         if (current) return mapData.find((node) => node.id === current.id) || current;
         return mapData.find((node) => node.id === pathData?.recommended?.id) || mapData.find((node) => node.status === "boss") || mapData[0] || null;
@@ -60,6 +69,15 @@ export function AppDataProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  const switchCourse = useCallback(
+    async (courseCode) => {
+      await switchActiveCourse(courseCode);
+      setSelectedLevel(null);
+      await refreshAll({ showLoading: true });
+    },
+    [refreshAll],
+  );
 
   useEffect(() => {
     refreshAll({ showLoading: true });
@@ -77,13 +95,16 @@ export function AppDataProvider({ children }) {
       todayPath,
       agentRun,
       selectedLevel,
+      courses,
+      activeCourse,
       setSelectedLevel,
       setAgentRun,
+      switchCourse,
       loading,
       error,
       refreshAll,
     }),
-    [agentRun, charts, dashboard, error, knowledgeGraph, learningMap, loading, refreshAll, risk, selectedLevel, tasks, todayPath, wrongQuestions],
+    [activeCourse, agentRun, charts, courses, dashboard, error, knowledgeGraph, learningMap, loading, refreshAll, risk, selectedLevel, switchCourse, tasks, todayPath, wrongQuestions],
   );
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

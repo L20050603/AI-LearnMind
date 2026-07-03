@@ -36,6 +36,7 @@ def seed_database(reset: bool = False):
             weekly_minutes_goal=540,
             preferred_study_time="晚上 19:00-22:00",
             study_style="闯关 + 测验驱动",
+            active_course_code="artificial_intelligence",
         )
         db.add(user)
 

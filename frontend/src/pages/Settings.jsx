@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { getAiStatus, updateProfile } from "../api/client.js";
+import { useToast } from "../components/common/ToastProvider.jsx";
 import GoalEditModal from "../components/profile/GoalEditModal.jsx";
 import StudyPlanEditModal from "../components/profile/StudyPlanEditModal.jsx";
 import AiModeBadge from "../components/tutor/AiModeBadge.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 function useLocalSetting(key, defaultValue) {
@@ -21,7 +22,8 @@ function useLocalSetting(key, defaultValue) {
 export default function Settings() {
   const navigate = useNavigate();
   const { user, setUser, logout } = useAuth();
-  const { dashboard, refreshAll } = useAppData();
+  const { dashboard, refreshAll, courses, activeCourse, switchCourse } = useAppData();
+  const { showToast } = useToast();
   const profile = dashboard?.student || user || {};
   const [status, setStatus] = useState(null);
   const [voiceEnabled, setVoiceEnabled] = useLocalSetting("voiceRecognitionEnabled", "true");
@@ -32,6 +34,7 @@ export default function Settings() {
   const [goalOpen, setGoalOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [courseBusy, setCourseBusy] = useState(false);
 
   useEffect(() => {
     getAiStatus()
@@ -56,8 +59,22 @@ export default function Settings() {
       const data = await updateProfile(profileForm);
       setUser(data);
       await refreshAll();
+      showToast("用户资料已保存。", "success");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleSwitchCourse(courseCode) {
+    if (!courseCode || courseCode === activeCourse?.active_course_code) return;
+    setCourseBusy(true);
+    try {
+      await switchCourse(courseCode);
+      showToast("学习主题已切换，学习地图、资源猎手、AI 导师和报告将围绕新主题生成。", "success");
+    } catch (error) {
+      showToast(error?.response?.data?.detail || "学习主题切换失败。", "error");
+    } finally {
+      setCourseBusy(false);
     }
   }
 
@@ -67,8 +84,49 @@ export default function Settings() {
   }
 
   return (
-    <PageContainer eyebrow="系统设置" title="系统设置与隐私" description="管理账号资料、学习目标、学习计划、AI Provider 和多模态权限。">
+    <PageContainer eyebrow="系统设置" title="系统设置与隐私" description="管理账号资料、学习主题、学习目标、AI Provider 和多模态权限。">
       <div className="grid gap-4 lg:grid-cols-2">
+        <div className="glass-panel p-5 lg:col-span-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-white">学习主题设置</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                当前主题：{activeCourse?.active_course_name || profile.active_course_name || "人工智能与机器智能基础"}。
+                切换主题不会删除历史数据，不同课程使用不同知识点 ID，掌握度不会互相污染。
+              </p>
+            </div>
+            <select
+              disabled={courseBusy}
+              value={activeCourse?.active_course_code || profile.active_course_code || "artificial_intelligence"}
+              onChange={(event) => handleSwitchCourse(event.target.value)}
+              className="min-w-64 rounded-2xl border border-cyan-200/20 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none"
+            >
+              {courses.map((course) => (
+                <option key={course.code} value={course.code}>
+                  {course.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {courses.map((course) => (
+              <button
+                key={course.code}
+                type="button"
+                disabled={courseBusy}
+                onClick={() => handleSwitchCourse(course.code)}
+                className={`rounded-3xl border p-4 text-left transition ${
+                  course.code === activeCourse?.active_course_code ? "border-cyan-200/60 bg-cyan-400/15" : "border-white/10 bg-white/[0.045] hover:border-cyan-200/40"
+                }`}
+              >
+                <p className="font-semibold text-white">{course.name}</p>
+                <p className="mt-1 text-xs text-cyan-100/70">{course.point_count} 个知识点</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{course.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <form onSubmit={saveProfile} className="glass-panel p-5">
           <h2 className="text-lg font-semibold text-white">用户资料</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -85,7 +143,9 @@ export default function Settings() {
               </label>
             ))}
           </div>
-          <button type="submit" disabled={busy} className="primary-submit mt-4 max-w-40">{busy ? "保存中..." : "保存资料"}</button>
+          <button type="submit" disabled={busy} className="primary-submit mt-4 max-w-40">
+            {busy ? "保存中..." : "保存资料"}
+          </button>
         </form>
 
         <div className="glass-panel p-5">
@@ -135,13 +195,13 @@ export default function Settings() {
         </div>
 
         <div className="glass-panel p-5 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-white">隐私说明</h2>
+          <h2 className="text-lg font-semibold text-white">隐私与资源合规说明</h2>
           <label className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-sm text-slate-200">
             <span>记录关键交互事件</span>
             <input type="checkbox" checked={logEnabled === "true"} onChange={(event) => setLogEnabled(String(event.target.checked))} />
           </label>
           <p className="mt-3 text-sm leading-6 text-slate-300">
-            学习任务、记录、错题、情绪、报告、专注会话、语音和手势事件会按当前登录用户隔离保存。API Key 只放在后端 backend/.env，前端不会保存或上传 Key。
+            API Key 只放在后端环境变量中。资源猎手默认使用本地资料库；如配置官方搜索 API，只保存标题、链接和摘要，不绕过登录、付费墙、验证码或 robots 限制。
           </p>
         </div>
       </div>

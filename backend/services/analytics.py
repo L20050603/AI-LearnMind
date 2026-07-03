@@ -4,6 +4,7 @@ from sqlalchemy import func
 
 from models import EmotionCheckin, StudyRecord, User, WrongQuestion
 from services.emotion_service import analyze_emotion
+from services.knowledge_graph_service import get_course_pack, graph_points
 from services.mastery_service import get_knowledge_nodes
 from services.risk_engine import evaluate_risk, learning_efficiency_score, task_completion_rate
 
@@ -12,11 +13,19 @@ def _recent_start(days=7):
     return datetime.combine(date.today() - timedelta(days=days - 1), datetime.min.time())
 
 
-def calculate_dashboard_stats(db, user_id: int | None = None):
+def _course_point_ids(course_code: str | None = None):
+    return [point["id"] for point in graph_points(course_code)]
+
+
+def calculate_dashboard_stats(db, user_id: int | None = None, course_code: str | None = None):
     week_start = _recent_start()
     records_query = db.query(func.coalesce(func.sum(StudyRecord.study_minutes), 0)).filter(StudyRecord.created_at >= week_start)
     wrong_query = db.query(WrongQuestion).filter(WrongQuestion.fixed.is_(False))
     emotion_query = db.query(EmotionCheckin)
+    point_ids = _course_point_ids(course_code)
+    if point_ids:
+        records_query = records_query.filter(StudyRecord.knowledge_point_id.in_(point_ids))
+        wrong_query = wrong_query.filter(WrongQuestion.knowledge_point_id.in_(point_ids))
     if user_id is not None:
         records_query = records_query.filter(StudyRecord.user_id == user_id)
         wrong_query = wrong_query.filter(WrongQuestion.user_id == user_id)
@@ -24,15 +33,15 @@ def calculate_dashboard_stats(db, user_id: int | None = None):
     week_minutes = records_query.scalar()
     wrong_count = wrong_query.count()
     latest_emotion = emotion_query.order_by(EmotionCheckin.created_at.desc()).first()
-    risk = evaluate_risk(db, persist=False, user_id=user_id)
+    risk = evaluate_risk(db, persist=False, user_id=user_id, course_code=course_code)
 
     return {
-        "taskCompletion": task_completion_rate(db, user_id),
-        "efficiencyScore": learning_efficiency_score(db, user_id),
+        "taskCompletion": task_completion_rate(db, user_id, course_code),
+        "efficiencyScore": learning_efficiency_score(db, user_id, course_code),
         "learningRisk": risk["risk_score"],
         "stressLevel": latest_emotion.stress_level if latest_emotion else "中等",
         "streakDays": calculate_streak_days(db, user_id),
-        "todayXp": 120 + task_completion_rate(db, user_id),
+        "todayXp": 120 + task_completion_rate(db, user_id, course_code),
         "weeklyStudyMinutes": int(week_minutes),
         "wrongQuestionCount": wrong_count,
     }
@@ -54,12 +63,12 @@ def calculate_streak_days(db, user_id: int | None = None):
     return max(streak, 1 if record_dates else 0)
 
 
-def agent_messages(db, user_id: int | None = None):
-    stats = calculate_dashboard_stats(db, user_id)
-    nodes = get_knowledge_nodes(db, user_id)
+def agent_messages(db, user_id: int | None = None, course_code: str | None = None):
+    stats = calculate_dashboard_stats(db, user_id, course_code)
+    nodes = get_knowledge_nodes(db, user_id, course_code)
     weak_nodes = [node for node in nodes if node["mastery"] < 60 and node["status"] != "locked"]
     target = weak_nodes[0] if weak_nodes else nodes[-1]
-    risk = evaluate_risk(db, persist=False, user_id=user_id)
+    risk = evaluate_risk(db, persist=False, user_id=user_id, course_code=course_code)
     return [
         {
             "agent": "Profile Agent",
@@ -80,11 +89,14 @@ def agent_messages(db, user_id: int | None = None):
     ]
 
 
-def chart_payload(db, user_id: int | None = None):
+def chart_payload(db, user_id: int | None = None, course_code: str | None = None):
     labels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     week_start = _recent_start()
     records_query = db.query(StudyRecord).filter(StudyRecord.created_at >= week_start)
     emotions_query = db.query(EmotionCheckin).filter(EmotionCheckin.created_at >= week_start)
+    point_ids = _course_point_ids(course_code)
+    if point_ids:
+        records_query = records_query.filter(StudyRecord.knowledge_point_id.in_(point_ids))
     if user_id is not None:
         records_query = records_query.filter(StudyRecord.user_id == user_id)
         emotions_query = emotions_query.filter(EmotionCheckin.user_id == user_id)
@@ -100,7 +112,7 @@ def chart_payload(db, user_id: int | None = None):
         index = min(6, max(0, (emotion.created_at.date() - (date.today() - timedelta(days=6))).days))
         stress_by_day[index] = emotion.stress_score
 
-    nodes = get_knowledge_nodes(db, user_id)
+    nodes = get_knowledge_nodes(db, user_id, course_code)
     return {
         "weeklyTrend": {
             "days": labels,
@@ -126,11 +138,15 @@ def get_student(db, user_id: int | None = None):
         db.add(user)
         db.commit()
         db.refresh(user)
+    course_code = getattr(user, "active_course_code", None) or "artificial_intelligence"
+    course = get_course_pack(course_code) or {}
     return {
         "name": user.name,
         "level": user.level,
         "xp": user.xp,
         "goal": user.goal,
+        "active_course_code": course_code,
+        "active_course_name": course.get("name", "人工智能与机器智能基础"),
         "target_score": user.target_score or 85,
         "exam_date": user.exam_date or "",
         "daily_minutes_goal": user.daily_minutes_goal or 90,

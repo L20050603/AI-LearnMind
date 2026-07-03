@@ -29,6 +29,7 @@ class User(Base):
     weekly_minutes_goal = Column(Integer, default=540)
     preferred_study_time = Column(String, default="晚上 19:00-22:00")
     study_style = Column(String, default="闯关 + 测验驱动")
+    active_course_code = Column(String, default="artificial_intelligence")
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 

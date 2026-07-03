@@ -1,50 +1,12 @@
 # AI-LearnMind 知学伴
 
-AI-LearnMind 是一个“基于多智能体协同的大学生学习状态诊断与心理陪伴系统”。系统以学习闯关地图为主界面，把操作系统知识点设计成可解锁关卡，并通过真实数据库、专家规则、知识图谱、多 Agent 黑板协同和本地课程资料检索，完成从学习记录到个性化建议和周报生成的闭环。
+AI-LearnMind 是一个“基于多智能体协同的大学生学习状态诊断与心理陪伴系统”。系统提供学习闯关地图、知识图谱、知识星图、任务记录、情绪打卡、风险评分、资源猎手、AI 导师、多 Agent 黑板协同和学习周报。
 
 ## 技术栈
 
-前端：
-
-- React
-- Vite
-- Tailwind CSS
-- Framer Motion
-- ECharts
-- React Flow
-- axios
-- lucide-react
-
-后端：
-
-- Python
-- FastAPI
-- SQLAlchemy
-- SQLite
-- Pydantic
-- pytest
-
-智能模块：
-
-- 专家规则引擎
-- 情绪词典分析
-- 知识图谱
-- 学习路径规划
-- 多 Agent 黑板协同
-- 本地课程资料关键词检索
-- 可选 LLM 接口
-- Markdown 学习报告生成
-
-## 功能说明
-
-- 学习闯关地图：8 个操作系统知识点节点，支持已完成、当前、锁定、Boss 状态。
-- 数据 CRUD：学习任务、学习记录、情绪打卡、错题记录。
-- 动态掌握度：根据正确率、错题率、复习次数、任务完成情况计算。
-- 风险评分：输出风险分、风险等级、触发规则、原因和建议。
-- 知识图谱：根据前置知识判断解锁状态，并生成今日学习路径。
-- 多 Agent 协同：Profile、Diagnosis、Planner、Emotion、Intervention、Report 六个 Agent 写入黑板。
-- AI 导师：支持连续对话；有 API Key 时调用 LLM，没有 API Key 时使用本地资料检索和模板回复。
-- 学习周报：生成 JSON 周报和可复制 Markdown 报告。
+- 前端：React、Vite、Tailwind CSS、Framer Motion、ECharts、React Flow、Three.js、axios
+- 后端：FastAPI、SQLAlchemy、SQLite、Pydantic、pytest
+- 智能模块：专家规则引擎、情绪词典分析、知识图谱、学习路径规划、多 Agent 黑板协同、可解释风险评分、本地资料检索、可选 LLM
 
 ## 运行命令
 
@@ -67,135 +29,109 @@ npm install
 npm run dev
 ```
 
-访问：
+访问：`http://localhost:5173`
 
-```text
-http://localhost:5173
+演示账号：`demo` / `123456`
+
+## 学习主题切换
+
+系统已经支持轻量级“课程包 / 学习主题”：
+
+- 默认主题：人工智能与机器智能基础
+- 可切换主题：操作系统
+
+切换位置：登录后进入 `系统设置`，在“学习主题设置”卡片中选择课程。
+
+切换后会影响：
+
+- Dashboard 推荐内容
+- 学习地图
+- 知识图谱
+- 知识星图
+- 今日学习路径
+- 资源猎手默认课程和知识点
+- AI 导师本地资料检索
+- 本地测验题库
+- 学习报告中的课程名
+
+切换课程不会删除历史数据。不同课程使用不同 `knowledge_point_id`，掌握度和错题不会互相污染。
+
+## 资源猎手搜索模式
+
+资源猎手支持三种来源：
+
+- `local`：本地课程资料库，默认模式，不联网。
+- `web`：通过用户配置的官方搜索 API 联网搜索。
+- `crawl`：用户手动提供公开 URL，系统抓取标题、摘要和文本片段。
+
+默认 `SEARCH_PROVIDER=local`，不需要任何 API Key。
+
+### 配置联网搜索
+
+在 `backend/.env` 中配置：
+
+```env
+SEARCH_PROVIDER=local
+SEARCH_API_KEY=
+SEARCH_API_BASE_URL=
 ```
 
-## 演示数据
+支持：
 
-运行 `python seed.py` 会生成：
+- `SEARCH_PROVIDER=local`：本地资料库。
+- `SEARCH_PROVIDER=custom`：向 `SEARCH_API_BASE_URL` POST JSON：`{"query": "...", "limit": 8}`。
+- `SEARCH_PROVIDER=tavily`：Tavily 风格接口，默认 `https://api.tavily.com/search`。
+- `SEARCH_PROVIDER=bing`：Bing Web Search 风格接口，Header 使用 `Ocp-Apim-Subscription-Key`。
 
-- 操作系统课程
-- 8 个知识点
-- 10 条学习任务
-- 7 天学习记录
-- 5 条情绪打卡
-- 10 条错题记录
+如果没有 API Key、请求失败、超时或返回格式不正确，系统会自动 fallback 到本地资料库。
 
-演示脚本见：[docs/demo_script.md](docs/demo_script.md)
+### 合规限制
 
-## 系统架构
+资源猎手不会爬取搜索引擎结果页，不绕过登录、付费墙、验证码或 robots 限制。
 
-```text
-frontend/
-  React Dashboard
-    ├─ 学习闯关地图
-    ├─ 数据录入面板
-    ├─ 风险中心
-    ├─ 多 Agent 协同面板
-    ├─ 知识图谱 React Flow
-    └─ ECharts 仪表盘
+手动 URL 抓取限制：
 
-backend/
-  FastAPI
-    ├─ CRUD Routers
-    ├─ Risk Engine
-    ├─ Emotion Service
-    ├─ Mastery Service
-    ├─ Knowledge Graph Service
-    ├─ Path Planner
-    ├─ Agent Coordinator + Blackboard
-    ├─ Tutor Retrieval Service
-    └─ Report Service
+- 只允许 `http/https`。
+- 禁止 login、signin、pay、captcha、verify、private、account、auth、download、attachment 等路径。
+- 暂不抓取 PDF、Office、压缩包等大文件。
+- 读取大小限制为 150000 bytes。
+- 使用明确 User-Agent：`AI-LearnMind-ResourceHunter/1.0 EducationalUse`。
+- 如果 `robots.txt` 明确禁止当前路径，系统会拒绝抓取。
 
-SQLite
-  users / learning_tasks / study_records / emotion_checkins
-  wrong_questions / knowledge_points / risk_reports
-```
+## 演示路线
 
-## API 说明
+1. 登录 demo。
+2. 进入系统设置，查看当前主题“人工智能与机器智能基础”。
+3. 打开学习地图，展示 AI/机器智能知识点。
+4. 切换到“操作系统”，查看操作系统学习地图仍然保留。
+5. 切回“人工智能与机器智能基础”。
+6. 打开资源猎手，选择“专家系统”或“知识图谱”相关关卡。
+7. 搜索“专家系统”。
+8. 未配置搜索 API 时展示本地 fallback。
+9. 配置官方搜索 API 后展示联网搜索结果和合规说明。
 
-基础数据：
+## 主要 API
 
+- `GET /api/courses`
+- `GET /api/courses/active`
+- `PATCH /api/courses/active`
+- `PATCH /api/profile/active-course`
 - `GET /api/dashboard`
-- `GET /api/charts`
 - `GET /api/learning-map`
 - `GET /api/knowledge/graph`
+- `GET /api/star-map/knowledge`
 - `GET /api/learning-path/today`
-
-学习数据：
-
-- `GET /api/tasks`
-- `POST /api/tasks`
-- `PATCH /api/tasks/{id}`
-- `DELETE /api/tasks/{id}`
-- `GET /api/study-records`
-- `POST /api/study-records`
-- `GET /api/emotion-checkins`
-- `POST /api/emotion-checkins`
-- `GET /api/wrong-questions`
-- `POST /api/wrong-questions`
-
-智能诊断：
-
-- `GET /api/risk/current`
-- `POST /api/risk/evaluate`
-- `GET /api/agents/run`
-- `GET /api/agents/blackboard`
-- `GET /api/agents/final-advice`
-
-AI 导师与报告：
-
-- `POST /api/chat`
-- `POST /api/tutor/explain`
-- `GET /api/reports/weekly`
-- `GET /api/reports/export-md`
+- `POST /api/resources/search`
+- `POST /api/resources/crawl`
+- `POST /api/quiz/generate`
+- `POST /api/quiz/{quiz_id}/submit`
 
 ## 测试
 
 ```bash
 cd backend
-venv\Scripts\activate
 pytest
-```
 
-测试覆盖：
-
-- 任务接口 CRUD
-- 风险评分可解释输出
-- 情绪词典分析
-- 学习路径规划
-
-## 可选 LLM 配置
-
-默认不需要任何 API Key。系统会使用本地课程资料检索和模板生成回复。
-
-如果要接入真实 LLM，可配置：
-
-```bash
-set OPENAI_API_KEY=你的Key
-set LLM_MODEL=gpt-4o-mini
-```
-
-或：
-
-```bash
-set LLM_API_KEY=你的Key
-set LLM_API_URL=https://api.openai.com/v1/chat/completions
-set LLM_MODEL=gpt-4o-mini
-```
-
-## 完整闭环
-
-演示主线：
-
-```text
-添加学习记录
-  → 掌握度重新计算
-  → 风险评分更新
-  → Agent 黑板协同
-  → 今日路径规划
-  → 学习报告生成
+cd ../frontend
+npm run build
 ```

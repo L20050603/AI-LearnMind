@@ -1,58 +1,20 @@
 [
-  {
-    "id": "os-basic",
-    "title": "操作系统基础",
-    "knowledge_point_id": 2,
-    "keywords": ["操作系统", "内核", "用户态", "系统调用", "资源管理", "OS"],
-    "summary": "操作系统负责管理 CPU、内存、文件和外设，为应用程序提供系统调用接口。",
-    "content": "复习操作系统基础时，要抓住两个层次：第一是资源管理，包括处理器管理、存储管理、文件管理和设备管理；第二是抽象接口，包括进程、虚拟内存、文件和系统调用。考试常考概念辨析，例如用户态与内核态为什么要隔离、系统调用如何从用户程序进入内核。"
-  },
-  {
-    "id": "process-thread",
-    "title": "进程与线程",
-    "knowledge_point_id": 3,
-    "keywords": ["进程", "线程", "PCB", "上下文切换", "并发", "同步", "互斥"],
-    "summary": "进程是资源分配单位，线程是 CPU 调度的基本单位，两者共同支撑并发执行。",
-    "content": "进程与线程的核心是区分资源归属和执行流。进程拥有独立地址空间和 PCB，线程共享进程资源但有自己的栈和寄存器上下文。复习时建议画出进程状态转换图，并结合同步互斥理解临界区、信号量和锁。"
-  },
-  {
-    "id": "scheduling",
-    "title": "调度算法",
-    "knowledge_point_id": 4,
-    "keywords": ["调度", "FCFS", "SJF", "RR", "优先级", "周转时间", "等待时间"],
-    "summary": "调度算法决定就绪进程获得 CPU 的顺序，常用指标包括等待时间、周转时间和响应时间。",
-    "content": "调度算法题通常要求按时间轴模拟。FCFS 简单但可能导致短作业等待；SJF 平均等待时间较低但需要估计运行时间；RR 通过时间片改善响应性。做题时先画甘特图，再计算完成时间、周转时间和等待时间。"
-  },
-  {
-    "id": "memory",
-    "title": "存储管理",
-    "knowledge_point_id": 5,
-    "keywords": ["存储管理", "内存", "分页", "分段", "虚拟内存", "页表", "地址转换"],
-    "summary": "存储管理通过分页、分段和虚拟内存机制提升内存利用率并保护进程地址空间。",
-    "content": "存储管理复习重点是地址转换。分页把逻辑地址拆为页号和页内偏移，通过页表映射到物理块；分段强调程序逻辑结构；虚拟内存允许程序只把必要页面调入内存。建议结合页表项、缺页中断和 TLB 一起理解。"
-  },
-  {
-    "id": "page-replacement",
-    "title": "页面置换算法 Boss",
-    "knowledge_point_id": 6,
-    "keywords": ["页面置换", "FIFO", "LRU", "OPT", "Clock", "缺页", "Boss"],
-    "summary": "页面置换算法在内存不足时选择淘汰页，常见算法包括 OPT、FIFO、LRU 和 Clock。",
-    "content": "页面置换算法是 Boss 关卡。OPT 作为理论最优，用未来最长时间不访问的页面作为淘汰对象；FIFO 淘汰最早进入内存的页，可能出现 Belady 异常；LRU 淘汰最近最久未使用的页，符合局部性原理；Clock 用访问位近似 LRU。做题时必须逐步维护页框状态和缺页次数。"
-  },
-  {
-    "id": "file-system",
-    "title": "文件系统",
-    "knowledge_point_id": 7,
-    "keywords": ["文件系统", "目录", "inode", "FAT", "索引分配", "空闲空间", "磁盘"],
-    "summary": "文件系统负责文件命名、目录组织、磁盘空间分配和访问控制。",
-    "content": "文件系统复习应关注目录结构、文件控制块、索引节点和磁盘块分配。连续分配访问快但扩展困难；链式分配便于扩展但随机访问差；索引分配兼顾扩展和随机访问。考试可能结合目录路径解析和磁盘块计算。"
-  },
-  {
-    "id": "final-challenge",
-    "title": "期末综合挑战",
-    "knowledge_point_id": 8,
-    "keywords": ["期末", "综合", "复习计划", "错题", "冲刺", "85"],
-    "summary": "期末综合挑战要求把进程、调度、内存、页面置换和文件系统串联复盘。",
-    "content": "期末冲刺建议按高权重知识点排序：页面置换、存储管理、调度算法、进程线程、文件系统。每轮复习包括概念复述、典型题、错题原因和限时训练。目标 85+ 时，不要只刷题，要把每类题的判分步骤写清楚。"
-  }
+  {"id":"os-basic","title":"操作系统基础","course_code":"operating_system","knowledge_point_id":2,"keywords":["操作系统","内核","系统调用","资源管理"],"summary":"操作系统负责管理 CPU、内存、文件和外设，并向应用提供系统调用接口。","content":"复习操作系统基础时，要抓住资源管理和抽象接口两个层次。资源管理包括处理器、存储、文件和设备；抽象接口包括进程、虚拟内存、文件和系统调用。"},
+  {"id":"process-thread","title":"进程与线程","course_code":"operating_system","knowledge_point_id":3,"keywords":["进程","线程","PCB","同步","互斥"],"summary":"进程是资源分配单位，线程是 CPU 调度执行单位。","content":"进程拥有独立地址空间和 PCB，线程共享进程资源但拥有自己的栈和寄存器上下文。同步互斥题要先判断临界区和事件顺序。"},
+  {"id":"scheduling","title":"调度算法","course_code":"operating_system","knowledge_point_id":4,"keywords":["FCFS","SJF","RR","等待时间","周转时间"],"summary":"调度算法决定就绪进程获得 CPU 的顺序。","content":"调度题通常要画甘特图，计算完成时间、周转时间、带权周转时间和等待时间。RR 要关注时间片大小和上下文切换。"},
+  {"id":"memory","title":"存储管理","course_code":"operating_system","knowledge_point_id":5,"keywords":["分页","分段","页表","TLB","虚拟内存"],"summary":"存储管理通过分页、分段和虚拟内存提升利用率并保护地址空间。","content":"分页地址转换要拆分页号和页内偏移，查询页表后拼接物理块号。TLB 命中可以减少页表访问开销。"},
+  {"id":"page-replacement","title":"页面置换算法 Boss","course_code":"operating_system","knowledge_point_id":6,"keywords":["页面置换","FIFO","LRU","OPT","Clock","缺页"],"summary":"页面置换算法在内存不足时选择淘汰页。","content":"OPT 淘汰未来最长时间不用的页，FIFO 淘汰最早进入内存的页，LRU 淘汰最近最久未使用的页。做题必须逐步维护页框状态。"},
+  {"id":"file-system","title":"文件系统","course_code":"operating_system","knowledge_point_id":7,"keywords":["文件系统","目录","inode","索引分配"],"summary":"文件系统负责文件命名、目录组织、磁盘块分配和访问控制。","content":"连续分配访问快但扩展困难，链式分配便于扩展但随机访问差，索引分配兼顾随机访问和扩展能力。"},
+  {"id":"os-final","title":"操作系统综合复习","course_code":"operating_system","knowledge_point_id":8,"keywords":["综合复习","错题","期末","85+"],"summary":"把进程、调度、存储、页面置换和文件系统串联复盘。","content":"期末复习建议按照高权重知识点排序，每轮包含概念复述、典型题、错题原因和限时训练。"},
+
+  {"id":"ai-concept","title":"人工智能与机器智能基本概念","course_code":"artificial_intelligence","knowledge_point_id":102,"keywords":["人工智能","机器智能","智能体","图灵测试"],"summary":"人工智能是研究和构造智能行为的技术体系，机器智能强调机器在任务中表现出的智能能力。","content":"人工智能不仅是某个模型，还包括感知、知识表示、推理、学习、规划和行动。机器智能通常从系统表现出发，看机器能否在环境中完成需要智能的任务。"},
+  {"id":"ai-information-knowledge","title":"信息、知识与智能策略","course_code":"artificial_intelligence","knowledge_point_id":103,"keywords":["信息","知识","策略","推理","知识库"],"summary":"智能系统需要把数据转化为信息，再组织成知识与策略。","content":"数据是原始符号，信息是有意义的数据，知识是结构化的概念、关系和规则，策略则指导智能体如何根据状态选择行动。"},
+  {"id":"ai-neural-network","title":"结构模拟与神经网络","course_code":"artificial_intelligence","knowledge_point_id":104,"keywords":["神经网络","神经元","权重","激活函数","结构模拟"],"summary":"神经网络从结构模拟角度用连接权重表示经验。","content":"神经元接收输入并通过权重加权求和，再经过激活函数产生输出。学习过程通常根据误差调整权重，使网络逐渐拟合目标函数。"},
+  {"id":"ai-expert-system","title":"功能模拟与专家系统","course_code":"artificial_intelligence","knowledge_point_id":105,"keywords":["专家系统","知识表示","知识库","推理机","产生式规则"],"summary":"专家系统用领域知识和规则推理模拟专家决策。","content":"典型专家系统包含知识库、推理机、解释机制和人机接口。规则通常写成 IF 条件 THEN 结论，推理机根据证据触发规则并给出解释。"},
+  {"id":"ai-knowledge-graph","title":"知识表示、知识图谱与知识工程","course_code":"artificial_intelligence","knowledge_point_id":106,"keywords":["知识图谱","实体","关系","本体","知识工程"],"summary":"知识图谱通过实体、关系和属性表达可计算语义。","content":"知识工程包括知识获取、知识表示、知识融合、质量评估和应用推理。知识图谱不是普通思维导图，它强调可查询、可推理的结构化关系。"},
+  {"id":"ai-perception","title":"行为模拟、机器感知与模式识别","course_code":"artificial_intelligence","knowledge_point_id":107,"keywords":["机器感知","模式识别","特征提取","分类器"],"summary":"机器感知把图像、语音和传感器信号转化为可判断的表示。","content":"模式识别通常包括数据采集、预处理、特征提取、分类识别和反馈评估。识别结果应包含置信度，而不是绝对结论。"},
+  {"id":"ai-machine-learning","title":"机器学习基础","course_code":"artificial_intelligence","knowledge_point_id":108,"keywords":["机器学习","监督学习","无监督学习","强化学习","泛化"],"summary":"机器学习让系统从数据中学习规律并用于预测或决策。","content":"监督学习使用带标签样本，无监督学习发现数据结构，强化学习通过奖励信号学习行动策略。评价模型时要关注泛化而不是只看训练集准确率。"},
+  {"id":"ai-emotion","title":"情绪识别与情智一体系统","course_code":"artificial_intelligence","knowledge_point_id":109,"keywords":["情绪识别","情感计算","压力评估","心理陪伴"],"summary":"情智一体系统同时关注任务表现和情绪状态。","content":"情绪识别可以基于词典、语音、表情或行为信号，但结果只是风险提示，不是医学诊断。陪伴系统应给出温和建议并尊重用户选择。"},
+  {"id":"ai-robot","title":"智能机器人与人机共生","course_code":"artificial_intelligence","knowledge_point_id":110,"keywords":["智能机器人","人机协同","规划","执行器","具身智能"],"summary":"智能机器人由感知、规划、决策、执行和反馈构成闭环。","content":"人机共生强调机器人与人的协作关系，需要透明解释、安全边界和人的最终决策权。机器人不仅是硬件，也包含智能控制和交互策略。"},
+  {"id":"ai-learning-expert-system","title":"智能学习专家系统设计案例","course_code":"artificial_intelligence","knowledge_point_id":111,"keywords":["智能学习","专家系统","多智能体","黑板模型","可解释"],"summary":"综合应用画像、知识图谱、规则推理和多 Agent 协同设计学习专家系统。","content":"一个完整智能学习专家系统应包含学习记录、掌握度计算、风险评分、知识图谱、路径规划、多 Agent 黑板协同和可解释报告。"}
 ]

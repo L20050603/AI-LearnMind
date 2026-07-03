@@ -36,9 +36,13 @@ export default function QuizPage() {
     setAnswers((current) => ({ ...current, [questionId]: value }));
   }
 
+  function answeredCount() {
+    return Object.values(answers).filter((value) => (Array.isArray(value) ? value.length > 0 : String(value || "").trim())).length;
+  }
+
   async function handleSubmit() {
     if (!quiz?.questions?.length) return;
-    if (Object.keys(answers).length < quiz.questions.length) {
+    if (answeredCount() < quiz.questions.length) {
       showToast("还有题目未作答，请完成后再提交。", "error");
       return;
     }

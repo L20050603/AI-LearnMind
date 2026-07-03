@@ -11,7 +11,7 @@ class LocalTemplateProvider(AIProvider):
     def chat(self, messages: list[dict], temperature: float = 0.3) -> str:
         latest = next((item.get("content", "") for item in reversed(messages) if item.get("role") == "user"), "")
         return (
-            "本地导师建议：我会先根据课程资料和你的学习记录拆解问题。"
+            "本地导师建议：我会先根据课程资料、知识图谱和你的学习记录拆解问题。"
             f"你刚才问的是：{short_text(latest, 120)}。"
             "建议按三步走：先复述核心概念，再做一道代表题，最后把错因写入错题记录。"
         )
@@ -24,7 +24,7 @@ class LocalTemplateProvider(AIProvider):
         mastery = level.get("mastery")
         mastery_text = f"当前掌握度约 {mastery}%，" if mastery is not None else ""
         answer = (
-            f"{topic} 的复习重点是先抓住定义、适用场景和典型题型。"
+            f"{topic} 的复习重点是先抓住定义、适用场景、典型题型和易错点。"
             f"{mastery_text}建议结合资料《{top.get('title', '本地课程资料')}》中的要点："
             f"{short_text(top.get('snippet') or top.get('summary'), 180)}。"
             f"当前综合风险为 {risk.get('risk_level', '未知')}，所以今天优先完成小闭环，不要一次铺太多内容。"
@@ -51,20 +51,12 @@ class LocalTemplateProvider(AIProvider):
         }
 
     def generate_quiz(self, topic: str, context: dict, count: int = 5) -> list[dict]:
-        count = max(1, min(count, 10))
-        quiz = []
-        for index in range(count):
-            quiz.append(
-                {
-                    "id": index + 1,
-                    "type": "short_answer" if index % 2 else "choice",
-                    "question": f"{topic} 小测 {index + 1}: 请说明一个关键概念或判断步骤。",
-                    "options": ["A. 概念定义", "B. 适用条件", "C. 反例或陷阱", "D. 解题步骤"] if index % 2 == 0 else [],
-                    "answer": "围绕概念、条件、步骤、陷阱四点作答。",
-                    "explanation": "本地模板题用于检查你是否能把知识点转化为可执行步骤。",
-                }
-            )
-        return quiz
+        from services.quiz.local_quiz_bank import local_questions
+
+        level = context.get("selected_level") or {}
+        knowledge = context.get("knowledge_point") or {}
+        knowledge_point_id = level.get("id") or knowledge.get("id") or 8
+        return local_questions(int(knowledge_point_id), count)
 
     def summarize_resource(self, title: str, content: str, context: dict) -> dict:
         return {
@@ -75,9 +67,9 @@ class LocalTemplateProvider(AIProvider):
 
     def generate_weekly_report(self, data: dict) -> str:
         return (
-            "# AI-LearnMind Weekly Report\n\n"
-            f"- Study minutes: {data.get('weekly_study_minutes', 0)}\n"
-            f"- Task completion: {data.get('task_completion', 0)}%\n"
-            f"- Risk: {data.get('risk_level', 'unknown')} ({data.get('risk_score', 0)})\n\n"
-            "Next week: focus on weak knowledge points, repair wrong questions, and keep daily review short but consistent."
+            "# AI-LearnMind 学习周报\n\n"
+            f"- 本周学习时长：{data.get('weekly_study_minutes', 0)} 分钟\n"
+            f"- 任务完成率：{data.get('task_completion', 0)}%\n"
+            f"- 风险状态：{data.get('risk_level', 'unknown')} ({data.get('risk_score', 0)})\n\n"
+            "下周建议：优先修复薄弱知识点，完成错题回看，并保持每天短时复盘。"
         )

@@ -2,7 +2,7 @@ export default function QuizHistoryPanel({ history = [] }) {
   return (
     <aside className="glass-panel h-fit p-5">
       <h3 className="font-semibold text-white">测验历史</h3>
-      <p className="mt-1 text-xs text-slate-400">用于展示最近的学习测验闭环结果。</p>
+      <p className="mt-1 text-xs text-slate-400">展示最近的学习测验闭环结果。</p>
       <div className="mt-4 space-y-2">
         {!history.length && <p className="rounded-2xl bg-white/[0.045] p-4 text-sm text-slate-400">暂无测验记录。</p>}
         {history.map((item) => (

@@ -19,6 +19,7 @@ class OpenAICompatibleProvider(AIProvider):
         self.api_url = self.api_url or f"{self.base_url.rstrip('/')}/chat/completions"
         self.model = os.getenv("LLM_MODEL") or os.getenv("DOUBAO_TEXT_MODEL") or "gpt-4o-mini"
         self.temperature = float(os.getenv("LLM_TEMPERATURE") or "0.3")
+        self.timeout = int(os.getenv("LLM_TIMEOUT_SECONDS") or "90")
 
     def _base_url_from_endpoint(self, endpoint: str):
         if not endpoint:
@@ -53,7 +54,7 @@ class OpenAICompatibleProvider(AIProvider):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 data = json.loads(response.read().decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise RuntimeError(f"LLM request failed: {exc}") from exc
@@ -84,8 +85,8 @@ class OpenAICompatibleProvider(AIProvider):
                 {
                     "role": "user",
                     "content": (
-                        f"Explain this topic for a student: {topic}\n{context_block(context)}\n"
-                        "Return JSON with answer, steps, examples, suggestedQuestions."
+                        f"请面向大学生解释这个知识点：{topic}\n{context_block(context)}\n"
+                        "请返回 JSON：answer, steps, examples, suggestedQuestions。"
                     ),
                 },
             ],
@@ -100,8 +101,8 @@ class OpenAICompatibleProvider(AIProvider):
                 {
                     "role": "user",
                     "content": (
-                        f"Explain and repair this wrong question.\nQuestion: {question}\nReason: {reason}\n{context_block(context)}\n"
-                        "Return JSON with answer, rootCause, repairPlan, suggestedQuestions."
+                        f"请讲解并修复这道错题。\n题目：{question}\n错因：{reason}\n{context_block(context)}\n"
+                        "请返回 JSON：answer, rootCause, repairPlan, suggestedQuestions。"
                     ),
                 },
             ],
@@ -113,23 +114,49 @@ class OpenAICompatibleProvider(AIProvider):
         level = context.get("selected_level") or {}
         risk = context.get("risk") or {}
         source = (context.get("sources") or [{}])[0]
+        knowledge = context.get("knowledge_point") or {}
+        wrong_questions = context.get("wrong_questions") or []
+        study_records = context.get("study_records") or []
         compact_context = (
             f"知识点：{topic}\n"
-            f"掌握度：{level.get('mastery', '未知')}%\n"
-            f"风险等级：{risk.get('risk_level', '未知')}\n"
+            f"课程：{knowledge.get('course', '操作系统')}\n"
+            f"章节：{knowledge.get('chapter', '')}\n"
+            f"类型：{knowledge.get('type', level.get('type', 'normal'))}\n"
+            f"难度：{knowledge.get('difficulty', level.get('difficulty', '未知'))}\n"
+            f"考试权重：{knowledge.get('exam_weight', level.get('exam_weight', '未知'))}\n"
+            f"知识点说明：{knowledge.get('description', level.get('strategy', ''))}\n"
+            f"前置知识：{knowledge.get('prerequisites', [])}\n"
+            f"当前掌握度：{level.get('mastery', '未知')}%\n"
+            f"风险等级：{risk.get('risk_level', '未知')}，风险分：{risk.get('risk_score', '未知')}\n"
+            f"近期错题：{json.dumps(wrong_questions[:3], ensure_ascii=False)}\n"
+            f"近期学习记录：{json.dumps(study_records[:3], ensure_ascii=False)}\n"
             f"参考资料：{source.get('title', '本地课程资料')} - {source.get('summary') or source.get('snippet') or ''}"
         )
+        schema = """
+只输出 JSON 数组，不要输出 Markdown，不要输出解释性前后缀。
+数组中每个对象必须包含：
+{
+  "id": 1,
+  "type": "single_choice | multiple_choice | calculation | scenario | diagnosis | short_answer",
+  "question": "题干，必须紧扣当前知识点，不能泛泛地问关键概念",
+  "options": ["选项A", "选项B", "选项C", "选项D"],
+  "answer": "单选/计算/简答为字符串；多选为字符串数组",
+  "explanation": "解析要给出推理步骤或错因",
+  "examPoint": "具体考点",
+  "difficulty": "easy | normal | hard",
+  "tags": ["关键词1", "关键词2"]
+}
+要求：
+1. 至少包含 3 种题型，其中必须有 calculation 或 scenario，必须有 diagnosis 或 short_answer。
+2. 如果知识点是页面置换算法，必须出现访问串、物理块数、FIFO/LRU/OPT/Clock、缺页次数或淘汰页计算。
+3. 如果是调度算法，必须出现进程到达时间、运行时间、等待时间、周转时间或时间片。
+4. 选择题必须 4 个选项；多选题 answer 必须是数组。
+5. 严禁生成“请说明一个关键概念或判断步骤”这类模板题。
+"""
         text = self.chat(
             [
-                {"role": "system", "content": "你是大学课程出题助手。只输出 JSON 数组，不要输出解释性前后缀。"},
-                {
-                    "role": "user",
-                    "content": (
-                        f"请基于以下信息生成 {count} 道中文小测题：\n{compact_context}\n"
-                        "要求：题目覆盖概念辨析、过程模拟、易错点。"
-                        "输出格式必须是 JSON 数组，每项包含 id,type,question,options,answer,explanation。"
-                    ),
-                },
+                {"role": "system", "content": "你是大学《操作系统》课程的严谨出题老师，擅长生成有计算过程、应用场景和错因诊断的中文测验题。"},
+                {"role": "user", "content": f"请基于以下学生上下文生成 {count} 道中文小测题。\n\n{compact_context}\n\n{schema}"},
             ],
             self.temperature,
         )
@@ -142,7 +169,7 @@ class OpenAICompatibleProvider(AIProvider):
         text = self.chat(
             [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Summarize this resource for study use.\nTitle: {title}\nContent: {content[:2500]}"},
+                {"role": "user", "content": f"请把这个学习资源总结成可复习材料。\n标题：{title}\n内容：{content[:2500]}"},
             ],
             self.temperature,
         )
@@ -152,7 +179,7 @@ class OpenAICompatibleProvider(AIProvider):
         return self.chat(
             [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Generate a concise weekly markdown report from this data:\n{json.dumps(data, ensure_ascii=False)}"},
+                {"role": "user", "content": f"请根据这些数据生成一份简洁的中文 Markdown 周报：\n{json.dumps(data, ensure_ascii=False)}"},
             ],
             self.temperature,
         )

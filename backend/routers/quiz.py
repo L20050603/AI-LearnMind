@@ -20,13 +20,51 @@ def quiz_payload(db, quiz_id: int, user_id: int):
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
     questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == quiz_id).order_by(QuizQuestion.id).all()
+    parsed_questions = []
+    modes = []
+    for q in questions:
+        raw_options = json.loads(q.options_json or "[]")
+        if isinstance(raw_options, dict):
+            options = raw_options.get("items", [])
+            question_type = raw_options.get("type", "single_choice")
+            exam_point = raw_options.get("examPoint", "")
+            tags = raw_options.get("tags", [])
+            source_mode = raw_options.get("sourceMode", "")
+            quality_note = raw_options.get("qualityNote", "")
+        else:
+            options = raw_options
+            question_type = "single_choice" if raw_options else "short_answer"
+            exam_point = ""
+            tags = []
+            source_mode = ""
+            quality_note = ""
+        if source_mode:
+            modes.append(source_mode)
+        if not options and question_type in {"short_answer", "diagnosis"}:
+            options = ["开放作答"]
+        parsed_questions.append(
+            {
+                "id": q.id,
+                "question": q.question,
+                "options": options,
+                "type": question_type,
+                "examPoint": exam_point,
+                "tags": tags,
+                "difficulty": q.difficulty,
+                "qualityNote": quality_note,
+            }
+        )
+    generation_mode = next((mode for mode in modes if mode), quiz.source_type)
     return {
         "id": quiz.id,
         "title": quiz.title,
         "knowledge_point_id": quiz.knowledge_point_id,
         "source_type": quiz.source_type,
         "source_id": quiz.source_id,
-        "questions": [{"id": q.id, "question": q.question, "options": json.loads(q.options_json or "[]"), "difficulty": q.difficulty} for q in questions],
+        "generationMode": generation_mode,
+        "questionTypes": sorted({item["type"] for item in parsed_questions}),
+        "examPoints": sorted({item["examPoint"] for item in parsed_questions if item["examPoint"]}),
+        "questions": parsed_questions,
     }
 
 

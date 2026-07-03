@@ -59,7 +59,8 @@ export default function LevelActionBar({ level, compact = false }) {
         sourceId: current.id,
         count: 5,
       });
-      showToast("小测验已生成，正在进入答题页。", "success");
+      const mode = result.mode === "llm" ? "大模型" : "本地备案题库";
+      showToast(`${mode}小测验已生成，正在进入答题页。`, "success");
       navigate(`/quiz/${result.quiz?.id}`);
     } catch (error) {
       showToast(error?.response?.data?.detail || "生成小测验失败。", "error");

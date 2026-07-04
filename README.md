@@ -59,6 +59,24 @@ npm run dev
 
 演示账号：`demo` / `123456`
 
+## 大模型与 API Key
+
+项目无 API Key 也能完整演示，会自动使用本地规则、模板回复、本地题库和本地课程资料库。
+
+如果需要演示豆包 / 火山方舟大模型，在 `backend/.env` 中填写：
+
+```env
+DOUBAO_API_KEY=你的真实 API Key
+DOUBAO_TEXT_MODEL=doubao-seed-2-0-lite-260428
+DOUBAO_TEXT_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/responses
+```
+
+注意：
+
+- `backend/.env` 已加入 `.gitignore`，不要提交真实 API Key。
+- 修改 `.env` 后需要重启 FastAPI。
+- 进入 `系统设置 -> AI Provider 状态`，看到“模式：大模型增强”才说明已真正调用模型。
+
 ## 学习主题切换
 
 系统已经支持轻量级“课程包 / 学习主题”：
@@ -126,31 +144,70 @@ SEARCH_API_BASE_URL=
 
 ## 演示路线
 
-1. 登录 demo。
-2. 进入系统设置，查看当前主题“人工智能与机器智能基础”。
-3. 打开学习地图，展示 AI/机器智能知识点。
-4. 切换到“操作系统”，查看操作系统学习地图仍然保留。
-5. 切回“人工智能与机器智能基础”。
-6. 打开资源猎手，选择“专家系统”或“知识图谱”相关关卡。
-7. 搜索“专家系统”。
-8. 未配置搜索 API 时展示本地 fallback。
-9. 配置官方搜索 API 后展示联网搜索结果和合规说明。
+1. 登录 demo，Dashboard 展示“机器智能创新设计演示”入口。
+2. 进入系统设置，查看学习主题可切换、可新增、可编辑。
+3. 打开学习地图，展示“人工智能与机器智能基础”知识点。
+4. 打开知识图谱，展示前置、相关和易混淆关系。
+5. 打开风险诊断，展示专家系统五部分和推理链。
+6. 打开 Agent 实验室，运行多 Agent 黑板协同。
+7. 打开 LearnMind Bot，输入“我快考试了很焦虑，专家系统总是记不住”。
+8. 打开资源猎手，搜索“专家系统”，展示本地 fallback 或联网搜索。
+9. 生成测验并提交，展示 XP、掌握度和风险闭环。
+10. 打开报告页，生成“创新设计素材”Markdown。
+11. 打开创新设计中心，展示设计初衷、系统框架、工作原理和创新点。
 
 ## 主要 API
 
 - `GET /api/courses`
 - `GET /api/courses/active`
 - `PATCH /api/courses/active`
+- `POST /api/courses`
+- `PATCH /api/courses/{course_code}`
+- `DELETE /api/courses/{course_code}`
 - `PATCH /api/profile/active-course`
 - `GET /api/dashboard`
 - `GET /api/learning-map`
 - `GET /api/knowledge/graph`
+- `GET /api/knowledge/graph/explain/{point_id}`
 - `GET /api/star-map/knowledge`
 - `GET /api/learning-path/today`
+- `GET /api/risk/current`
+- `GET /api/agents/run`
+- `GET /api/bot/state`
+- `POST /api/bot/interact`
 - `POST /api/resources/search`
 - `POST /api/resources/crawl`
 - `POST /api/quiz/generate`
 - `POST /api/quiz/{quiz_id}/submit`
+- `GET /api/reports/innovation-summary`
+
+## 提交作业说明
+
+建议提交源码、文档和配置示例，不提交本地运行生成物。
+
+需要提交：
+
+- `backend/` 源码、`requirements.txt`、`.env.example`
+- `frontend/` 源码、`package.json`、`package-lock.json`
+- `README.md`
+- `docs/demo_script.md`
+
+不要提交：
+
+- `backend/.env`：包含真实 API Key。
+- `backend/venv/`：Python 虚拟环境。
+- `frontend/node_modules/`：前端依赖。
+- `frontend/dist/`：前端构建产物，可由 `npm run build` 重新生成。
+- `backend/learnmind.db`：本地 SQLite 数据库，可由 `python seed.py` 重新初始化。
+- `__pycache__/`、`.pytest_cache/`、`.npm-cache/`、`*.log`：缓存和日志。
+
+演示前检查：
+
+1. 后端启动后访问 `http://localhost:8000`。
+2. 前端启动后访问 `http://localhost:5173`。
+3. 登录 `demo / 123456`。
+4. 如果要展示大模型，先确认 `系统设置 -> AI Provider 状态` 为“大模型增强”。
+5. 如果只做离线演示，不需要任何 API Key。
 
 ## 测试
 

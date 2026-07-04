@@ -15,6 +15,7 @@ def _blocked(message):
 
 
 def _robots_allowed(parsed):
+    # 只做基础 robots.txt 合规检查；如果无法确认规则，按作业展示场景采取谨慎拒绝。
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
     request = urllib.request.Request(robots_url, headers={"User-Agent": USER_AGENT})
     try:
@@ -44,6 +45,7 @@ def _robots_allowed(parsed):
 
 
 def crawl_url(url: str):
+    # URL 抓取只用于公开学习资料摘要，不绕过登录、付费墙、验证码或下载限制。
     parsed = urlparse(url)
     lowered = url.lower()
     if parsed.scheme not in {"http", "https"}:

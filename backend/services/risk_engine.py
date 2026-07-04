@@ -23,6 +23,7 @@ def _active_course_code(db, user_id: int | None = None, course_code: str | None 
 
 
 def _filter_course(query, model, course_code: str | None = None):
+    # 所有学习事实先按当前课程包过滤，避免不同主题的掌握度和风险互相污染。
     point_ids = [point["id"] for point in graph_points(course_code)]
     return query.filter(model.knowledge_point_id.in_(point_ids)) if point_ids else query
 
@@ -63,6 +64,7 @@ def correctness_metrics(db, user_id: int | None = None, course_code: str | None 
 
 
 def study_stability_score(db, user_id: int | None = None, course_code: str | None = None):
+    # 用近 7 天学习时长波动估计稳定性：越规律，风险评分中的不稳定惩罚越低。
     query = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start())
     query = _filter_course(query, StudyRecord, _active_course_code(db, user_id, course_code))
     if user_id is not None:
@@ -90,6 +92,7 @@ def learning_efficiency_score(db, user_id: int | None = None, course_code: str |
 
 
 def _expert_system_view(db, user_id, active_course, result_context, explanation, correctness, emotion):
+    # 将风险评分拆成专家系统五部分，前端据此展示知识库、工作记忆、推理机、解释器和用户接口。
     points = graph_points(active_course)
     point_ids = [point["id"] for point in points]
     tasks = db.query(LearningTask).filter(LearningTask.user_id == (user_id or 1), LearningTask.knowledge_point_id.in_(point_ids)).all()
@@ -161,6 +164,7 @@ def latest_emotion_context(db, override=None, user_id: int | None = None):
 
 
 def evaluate_risk(db, override=None, persist=True, user_id: int | None = None, course_code: str | None = None):
+    # 综合风险采用可解释加权公式：任务、错题、掌握度、压力和稳定性共同决定最终分数。
     active_course = _active_course_code(db, user_id, course_code)
     completion = task_completion_rate(db, user_id, active_course)
     correctness = correctness_metrics(db, user_id, active_course)

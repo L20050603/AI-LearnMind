@@ -34,6 +34,7 @@ def _daily_minutes(records):
 
 
 def build_context(db, user_id: int | None = None):
+    # 所有 Agent 共用同一份上下文，模拟黑板系统中的“综合数据库/工作记忆”。
     records_query = db.query(StudyRecord).filter(StudyRecord.created_at >= _week_start())
     all_records_query = db.query(StudyRecord)
     emotions_query = db.query(EmotionCheckin)
@@ -108,6 +109,7 @@ def _weighted_final_advice(entries, context):
 
 
 def run_agents(db, user_id: int | None = None):
+    # 六个子专家按流水线写入黑板，最终再由综合决策器汇总成学习建议。
     context = build_context(db, user_id)
     board = Blackboard()
     for agent in AGENT_PIPELINE:

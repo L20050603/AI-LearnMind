@@ -66,6 +66,7 @@ def get_course_pack(course_code: str | None = None):
 
 
 def _write_course_packs(packs):
+    # 课程包直接落盘到 JSON，适合课堂 Demo：无需引入迁移系统，也能编辑和恢复主题。
     COURSE_PACKS_PATH.write_text(json.dumps(packs, ensure_ascii=False, indent=2), encoding="utf-8")
     load_course_packs.cache_clear()
     load_knowledge_graph.cache_clear()
@@ -94,6 +95,7 @@ def _next_point_id(packs):
 
 
 def _build_points(course_code: str, course_name: str, point_names: list[str], existing_points: list[dict] | None = None):
+    # 自定义主题只要求用户输入知识点名称，系统自动补齐 ID、前置关系、难度、权重和 Boss 节点。
     existing_points = existing_points or []
     next_id = _next_point_id(load_course_packs())
     points = []
@@ -208,6 +210,7 @@ def max_downstream_count(course_code: str | None = None):
 
 
 def graph_edges(course_code: str | None = None):
+    # 图谱边不仅包含前置依赖，也补充“相关”和“易混淆”关系，用于展示知识工程表达能力。
     edges = []
     code = normalize_course_code(course_code)
     for point in graph_points(course_code):
@@ -257,6 +260,7 @@ def graph_node_payload(point, status=None, mastery=None):
 
 
 def explain_graph_point(point_id: int, course_code: str | None = None):
+    # 面向展示页的图谱解释：说明一个知识点为何重要、影响哪些后续节点、应如何复习。
     code = normalize_course_code(course_code)
     point = graph_point(point_id, code)
     if not point:

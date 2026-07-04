@@ -35,6 +35,7 @@ export function AppDataProvider({ children }) {
   const refreshAll = useCallback(async ({ showLoading = false } = {}) => {
     try {
       if (showLoading) setLoading(true);
+      // 全局数据统一刷新：学习地图、风险、知识图谱、主题等页面共享数据在这里保持一致。
       const [dashboardData, mapData, chartData, taskData, wrongData, riskData, graphData, pathData, coursesData, activeCourseData] = await Promise.all([
         getDashboard(),
         getLearningMap(),
@@ -72,6 +73,7 @@ export function AppDataProvider({ children }) {
 
   const switchCourse = useCallback(
     async (courseCode) => {
+      // 切换主题后清空当前关卡，并重新拉取地图/图谱/路径，避免旧课程节点残留。
       await switchActiveCourse(courseCode);
       setSelectedLevel(null);
       await refreshAll({ showLoading: true });

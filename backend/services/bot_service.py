@@ -6,6 +6,7 @@ from services.risk_engine import evaluate_risk
 
 
 def _detect_intent(message: str):
+    # 本地意图识别兜底：无大模型时也能完成“规划、复习、求助”三类核心陪伴场景。
     text = message or ""
     if any(word in text for word in ["安排", "计划", "今天", "时间"]):
         return "planning"
@@ -17,6 +18,7 @@ def _detect_intent(message: str):
 
 
 def _detect_points(message: str, course_code: str):
+    # 用当前课程包的知识点名称和关键词做轻量匹配，保证 Bot 回复能关联到学习主题。
     points = graph_points(course_code)
     matched = []
     for point in points:
@@ -29,6 +31,7 @@ def _detect_points(message: str, course_code: str):
 
 
 def bot_state(db, user, course_code: str):
+    # Bot 状态把认知风险、情绪状态和路径推荐压缩成“四层机器人机制”，便于课堂展示情智一体。
     risk = evaluate_risk(db, persist=False, user_id=user.id, course_code=course_code)
     path = today_learning_path(db, user.id, course_code)
     latest_emotion = db.query(EmotionCheckin).filter(EmotionCheckin.user_id == user.id).order_by(EmotionCheckin.created_at.desc()).first()
@@ -49,6 +52,7 @@ def bot_state(db, user, course_code: str):
 
 
 def bot_interact(db, user, message: str, available_minutes: int = 20, course_code: str | None = None):
+    # 交互回复遵循“先感知情绪与意图，再结合风险和知识图谱给出可执行动作”的闭环。
     active_course = course_code or user.active_course_code
     emotion = analyze_emotion_text("焦虑" if "焦虑" in message else "疲惫" if "累" in message or "学不动" in message else "平稳", message)
     intent = _detect_intent(message)

@@ -11,6 +11,7 @@ import WebGLFallback from "../components/galaxy/WebGLFallback.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 function supportsWebGL() {
+  // 三维星图依赖 WebGL，检测失败时显示 2D 兜底页面。
   try {
     const canvas = document.createElement("canvas");
     return !!(window.WebGLRenderingContext && (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")));
@@ -20,6 +21,7 @@ function supportsWebGL() {
 }
 
 export default function KnowledgeGalaxyPage() {
+  // 星图把知识点、前置关系、资源、测验和风险汇总成一个可漫游的三维视图。
   const { selectedLevel, setSelectedLevel, learningMap, refreshAll } = useAppData();
   const { showToast } = useToast();
   const [starMap, setStarMap] = useState({ courses: [], nodes: [], links: [] });
@@ -56,6 +58,7 @@ export default function KnowledgeGalaxyPage() {
   }, [selectedLevel?.id, starMap.nodes]);
 
   function selectNode(node) {
+    // 点击星体会同步全局 selectedLevel，后续资源、AI 导师和专注页都能接着使用。
     setSelectedStar(node);
     setSelectedLevel(learningMap.find((item) => item.id === node.id) || node);
   }

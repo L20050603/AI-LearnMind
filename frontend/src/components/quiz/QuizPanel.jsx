@@ -10,6 +10,7 @@ function modeLabel(mode) {
 export default function QuizPanel({ quiz, answers, setAnswer, onSubmit, busy, result }) {
   if (!quiz) return <div className="glass-panel p-8 text-center text-slate-400">正在读取测验...</div>;
 
+  // 统计题型用于向老师说明测验不是单一模板题，而是混合题型生成。
   const typeCounts = (quiz.questions || []).reduce((acc, item) => {
     const type = item.type || "single_choice";
     acc[type] = (acc[type] || 0) + 1;

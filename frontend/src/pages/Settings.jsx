@@ -11,6 +11,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 function useLocalSetting(key, defaultValue) {
+  // 语音和日志开关属于浏览器本地偏好，不写入学习数据库。
   const [value, setValue] = useState(() => localStorage.getItem(key) ?? defaultValue);
   function update(next) {
     setValue(next);
@@ -20,6 +21,7 @@ function useLocalSetting(key, defaultValue) {
 }
 
 export default function Settings() {
+  // 设置页集中管理账号、课程包、学习目标、AI 状态和多模态权限，方便演示前检查。
   const navigate = useNavigate();
   const { user, setUser, logout } = useAuth();
   const { dashboard, refreshAll, courses, activeCourse, switchCourse } = useAppData();
@@ -104,6 +106,7 @@ export default function Settings() {
   }
 
   async function saveCourse() {
+    // 自定义主题会生成独立知识点 ID，保留历史学习数据但不污染内置课程。
     if (!courseForm.name.trim()) {
       showToast("请填写学习主题名称。", "error");
       return;
@@ -134,6 +137,7 @@ export default function Settings() {
   }
 
   async function handleDeleteCourse(course) {
+    // 删除只移除自定义课程入口，不物理删除学习记录，避免误删演示数据。
     if (!course?.deletable) return;
     if (!window.confirm(`确定删除学习主题“${course.name}”吗？历史学习数据不会删除，但该主题入口会移除。`)) return;
     setCourseBusy(true);

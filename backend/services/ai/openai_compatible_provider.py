@@ -13,6 +13,7 @@ class OpenAICompatibleProvider(AIProvider):
     mode = "llm"
 
     def __init__(self):
+        # 同时兼容通用 OpenAI 风格变量和豆包 Ark 变量，便于学生低成本接入。
         self.api_key = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("DOUBAO_API_KEY") or os.getenv("ARK_API_KEY") or ""
         self.api_url = os.getenv("LLM_API_URL") or os.getenv("DOUBAO_TEXT_ENDPOINT") or ""
         self.base_url = os.getenv("LLM_API_BASE_URL") or self._base_url_from_endpoint(self.api_url) or "https://api.openai.com/v1"
@@ -31,6 +32,7 @@ class OpenAICompatibleProvider(AIProvider):
         return None
 
     def chat(self, messages: list[dict], temperature: float = 0.3) -> str:
+        # 豆包 responses 端点和 chat/completions 端点请求体不同，这里统一封装。
         if not self.api_key:
             raise RuntimeError("LLM API key is not configured")
         if self.api_url.rstrip("/").endswith("/responses"):
@@ -64,6 +66,7 @@ class OpenAICompatibleProvider(AIProvider):
         return text
 
     def _extract_text(self, data: dict) -> str:
+        # 兼容 output_text、choices.message.content 和 responses.output.content 多种返回格式。
         if data.get("output_text"):
             return data["output_text"]
         try:
@@ -111,6 +114,7 @@ class OpenAICompatibleProvider(AIProvider):
         return extract_json_object(text, {"answer": text, "rootCause": reason, "repairPlan": [], "suggestedQuestions": []})
 
     def generate_quiz(self, topic: str, context: dict, count: int = 5) -> list[dict]:
+        # 小测验要求返回结构化 JSON，后续还会经过 quiz_generator 的质量校验。
         level = context.get("selected_level") or {}
         risk = context.get("risk") or {}
         source = (context.get("sources") or [{}])[0]

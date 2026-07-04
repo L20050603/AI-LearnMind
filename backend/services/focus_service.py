@@ -30,6 +30,7 @@ def serialize_session(session: FocusSession):
 
 
 def current_session(db, user_id: int = 1):
+    # 同一用户同一时间只允许一个 running/paused 专注会话。
     return (
         db.query(FocusSession)
         .filter(FocusSession.user_id == user_id, FocusSession.status.in_(ACTIVE_STATUSES))
@@ -39,6 +40,7 @@ def current_session(db, user_id: int = 1):
 
 
 def start_focus_session(db, payload, user_id: int = 1):
+    # 开始专注只创建 FocusSession，不立即写学习记录，防止“点开始就刷数据”。
     point = graph_point(payload.knowledgePointId)
     if not point:
         raise HTTPException(status_code=404, detail="知识点不存在")
@@ -107,6 +109,7 @@ def _elapsed_minutes(session: FocusSession):
 
 
 def finish_focus_session(db, session_id: int, user_id: int = 1):
+    # 完成专注后统一写 StudyRecord、XP、掌握度和风险，形成真实闭环。
     session = get_focus_session(db, session_id, user_id)
     if session.status not in ACTIVE_STATUSES:
         raise HTTPException(status_code=400, detail="该专注会话已经结束")

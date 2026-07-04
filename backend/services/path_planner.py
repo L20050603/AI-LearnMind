@@ -20,6 +20,7 @@ def _urgency(db, point_id: int, user_id: int | None = None):
 
 
 def priority_for_point(db, point, mastery_scores, user_id: int | None = None, course_code: str | None = None):
+    # 路径规划采用显式优先级公式，便于在报告中解释“为什么推荐这个知识点”。
     weakness_score = 100 - mastery_scores.get(point["id"], 0)
     prerequisite_importance = downstream_count(point["id"], course_code) / max(1, max_downstream_count(course_code)) * 100
     urgency = _urgency(db, point["id"], user_id)
@@ -47,6 +48,7 @@ def recommendation_strategy(point, mastery, prereq_details):
 
 
 def ranked_candidates(db, user_id: int | None = None, course_code: str | None = None):
+    # 候选关卡先按当前课程包生成，再结合解锁状态和优先级排序。
     scores = mastery_map(db, user_id, course_code)
     candidates = []
     for point in graph_points(course_code):
@@ -81,6 +83,7 @@ def ranked_candidates(db, user_id: int | None = None, course_code: str | None = 
 
 
 def today_learning_path(db, user_id: int | None = None, course_code: str | None = None):
+    # 今日路径只取少量可执行步骤，避免给学生一次性推太多任务造成负担。
     candidates = ranked_candidates(db, user_id, course_code)
     recommended = next((item for item in candidates if item["unlocked"] and item["status"] != "completed"), candidates[0])
     unlocked_focus = [item for item in candidates if item["unlocked"] and item["status"] != "completed"][:3]

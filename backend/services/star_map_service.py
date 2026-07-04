@@ -30,6 +30,7 @@ def _node_color(node_type: str, status: str, risk: int, unlocked: bool, mastery:
 
 
 def _build_counts(db: Session, user_id: int):
+    # 星图会把资源、测验和未修复错题映射成卫星、流星和风险光晕。
     resources = defaultdict(int)
     for item in db.query(LearningResource).all():
         if item.related_knowledge_point_id:
@@ -62,6 +63,7 @@ def _risk_for_node(mastery: int, wrong_count: int, unlocked: bool, status: str):
 
 
 def _position(index: int, total: int, point: dict, modules: list[str]):
+    # 章节越接近，星体越靠近；难度和考试权重会影响半径与纵向位置。
     course_center = COURSE_CENTERS.get(point.get("course_code"), [0, 0, 0])
     module = point.get("module") or point["course"]
     module_index = modules.index(module) if module in modules else 0
@@ -76,6 +78,7 @@ def _position(index: int, total: int, point: dict, modules: list[str]):
 
 
 def build_star_map(db: Session, user_id: int, course_code: str | None = None):
+    # 星图只读取当前学习主题的知识点，避免不同课程包之间互相干扰。
     knowledge_nodes = {node["id"]: node for node in get_knowledge_nodes(db, user_id, course_code)}
     resources, quizzes, wrong = _build_counts(db, user_id)
     points = graph_points(course_code)[:50]

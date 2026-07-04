@@ -22,6 +22,7 @@ function MetricCard({ label, value, suffix = "", tone = "cyan" }) {
 }
 
 function daysUntil(dateText) {
+  // 考试倒计时来自用户学习目标，计划卡片会实时显示剩余天数。
   if (!dateText) return null;
   const target = new Date(`${dateText}T00:00:00`);
   if (Number.isNaN(target.getTime())) return null;
@@ -29,6 +30,7 @@ function daysUntil(dateText) {
 }
 
 export default function Dashboard() {
+  // Dashboard 只放总览和入口，具体地图、风险、Agent、报告都拆到独立页面。
   const navigate = useNavigate();
   const { dashboard, todayPath, selectedLevel, setSelectedLevel, agentRun, setAgentRun, refreshAll } = useAppData();
   const [running, setRunning] = useState(false);
@@ -40,6 +42,7 @@ export default function Dashboard() {
   const weeklyProgress = Math.min(100, Math.round(((stats.weeklyStudyMinutes || 0) / Math.max(1, student.weekly_minutes_goal || 540)) * 100));
 
   async function runAgentAnalysis() {
+    // 首页的 Agent 按钮会真实触发后端协同分析，而不是只做页面跳转。
     setRunning(true);
     try {
       setAgentRun(await getAgentsRun());

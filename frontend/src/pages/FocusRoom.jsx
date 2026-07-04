@@ -11,6 +11,7 @@ import { useAppData } from "../context/AppDataContext.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 function secondsFromSession(session) {
+  // 根据后端 FocusSession 计算剩余时间，刷新页面后也能恢复当前专注状态。
   if (!session) return 25 * 60;
   const planned = (session.planned_minutes || 25) * 60;
   if (session.status === "paused") return planned;
@@ -20,6 +21,7 @@ function secondsFromSession(session) {
 }
 
 export default function FocusRoom() {
+  // FocusRoom 不再直接创建学习记录，而是完整走 start/pause/resume/finish 会话接口。
   const { selectedLevel, setSelectedLevel, learningMap, refreshAll } = useAppData();
   const { showToast } = useToast();
   const [plannedMinutes, setPlannedMinutes] = useState(25);
@@ -118,6 +120,7 @@ export default function FocusRoom() {
   }
 
   async function handleFinish() {
+    // 完成后刷新全局数据，Dashboard、地图、风险中心会同步看到变化。
     if (!session || busy) return;
     setBusy(true);
     try {

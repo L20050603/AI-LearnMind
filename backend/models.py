@@ -6,12 +6,14 @@ from database import Base
 
 
 def utc_now():
+    # 数据库存储统一使用无时区 UTC，避免前后端展示时出现时区混乱。
     return datetime.now(UTC).replace(tzinfo=None)
 
 
 class User(Base):
     __tablename__ = "users"
 
+    # 用户表不仅保存登录信息，也保存学习目标和当前课程包选择。
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, index=True, default="")
     email = Column(String, index=True, default="")
@@ -50,6 +52,7 @@ class KnowledgePoint(Base):
 class LearningTask(Base):
     __tablename__ = "learning_tasks"
 
+    # 任务、记录、错题等学习行为都带 user_id，用来隔离不同学生的数据。
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
     knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), index=True)
@@ -130,6 +133,7 @@ class InteractionEvent(Base):
 class LearningResource(Base):
     __tablename__ = "learning_resources"
 
+    # 资源可能来自本地资料库、官方搜索 API 或用户输入 URL，mode 用来标记来源。
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     url = Column(String, default="", index=True)
@@ -218,6 +222,7 @@ class QuizAttempt(Base):
 class FocusSession(Base):
     __tablename__ = "focus_sessions"
 
+    # 专注会话是“开始-暂停-完成”闭环的核心，完成后才写入 StudyRecord 和 XP。
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), default=1, index=True)
     knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), index=True)

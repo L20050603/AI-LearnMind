@@ -17,6 +17,7 @@ import {
 const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
+  // AppDataContext 是前端的数据黑板，跨页面共享地图、风险、课程包和当前关卡。
   const [dashboard, setDashboard] = useState(null);
   const [learningMap, setLearningMap] = useState([]);
   const [charts, setCharts] = useState(null);

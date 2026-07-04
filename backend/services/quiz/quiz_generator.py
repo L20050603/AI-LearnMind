@@ -63,6 +63,7 @@ def clean_topic(knowledge_point_id: int, level: dict | None = None):
 
 
 def _context(db, knowledge_point_id, user_id: int | None = None):
+    # 出题上下文会带入当前关卡、风险、错题和最近学习记录，避免生成空泛 demo 题。
     point = graph_point(knowledge_point_id) or {}
     course_code = point.get("course_code")
     level = next((node for node in get_knowledge_nodes(db, user_id, course_code) if node["id"] == knowledge_point_id), None)
@@ -150,6 +151,7 @@ def quality_issues(item: dict, knowledge_point_id: int):
 
 
 def validate_questions(items: list[dict], knowledge_point_id: int, count: int, source_mode: str):
+    # 大模型返回后先做质量门禁：题型、答案、解析、关键词都合格才会入库。
     normalized = []
     seen = set()
     all_issues = []
@@ -173,6 +175,7 @@ def validate_questions(items: list[dict], knowledge_point_id: int, count: int, s
 
 
 def generate_questions(db, knowledge_point_id: int, count=5, user_id: int | None = None):
+    # 优先使用已配置的大模型；失败时退回本地题库，保证课堂演示不断线。
     context = _context(db, knowledge_point_id, user_id)
     topic = clean_topic(knowledge_point_id, context.get("selected_level"))
     try:
@@ -199,6 +202,7 @@ def _stored_options_payload(question: dict, mode: str):
 
 
 def create_quiz(db, knowledge_point_id: int, source_type="level", source_id=None, count=5, user_id: int = 1):
+    # Quiz 和题目分表保存，前端读取时不会泄露标准答案，提交后才评分。
     topic = clean_topic(knowledge_point_id)
     quiz = Quiz(user_id=user_id, knowledge_point_id=knowledge_point_id, title=f"{topic} 小测验", source_type=source_type, source_id=source_id)
     db.add(quiz)

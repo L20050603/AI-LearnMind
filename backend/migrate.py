@@ -5,6 +5,7 @@ from sqlalchemy import inspect, text
 
 
 USER_COLUMNS = {
+    # 没有 Alembic 时使用字段白名单补齐旧 SQLite，保证演示数据可平滑升级。
     "username": "VARCHAR DEFAULT ''",
     "email": "VARCHAR DEFAULT ''",
     "password_hash": "VARCHAR DEFAULT ''",
@@ -23,12 +24,14 @@ USER_COLUMNS = {
 
 
 def _demo_password_hash():
+    # demo 账号使用固定 PBKDF2 哈希，便于 seed 和迁移共同保持可登录状态。
     salt = "learnmind-demo-salt"
     digest = hashlib.pbkdf2_hmac("sha256", "123456".encode("utf-8"), salt.encode("utf-8"), 120_000).hex()
     return f"pbkdf2${salt}${digest}"
 
 
 def run_migrations():
+    # 只做追加字段和默认值修复，不删除用户已有学习数据。
     inspector = inspect(engine)
     tables = set(inspector.get_table_names())
     if "users" not in tables:

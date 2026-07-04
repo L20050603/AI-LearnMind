@@ -14,10 +14,12 @@ const positions = [
   { x: 93, y: 14 },
 ];
 
+// 地图节点使用固定百分比坐标，保证不同屏幕上仍保持左下到右上的闯关路线。
 const pathD =
   "M 8 78 C 14 68, 16 64, 21 62 S 30 72, 34 72 S 43 50, 47 48 S 54 35, 58 34 S 68 47, 72 46 S 80 30, 84 28 S 91 17, 93 14";
 
 function progressText(nodes) {
+  // 顶部进度条只展示当前课程包内的关卡统计。
   const completed = nodes.filter((node) => node.status === "completed").length;
   const unlocked = nodes.filter((node) => node.unlocked).length;
   return `${nodes.length} 个关卡 · 已完成 ${completed} · 已解锁 ${unlocked}`;
@@ -56,6 +58,7 @@ export default function LearningMap({ nodes, selectedNode, onSelectNode, todayPa
   }
 
   const recommended = todayPath?.recommended;
+  // 详情面板优先展示用户点击的关卡，其次展示今日推荐关卡。
   const displayNode = selectedNode || recommended || nodes.find((node) => node.status === "boss") || nodes[0];
   const mapTitle = `${courseName || "当前主题"}学习闯关星图`;
 

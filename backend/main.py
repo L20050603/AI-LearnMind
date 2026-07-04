@@ -11,6 +11,7 @@ app = FastAPI(
     version="0.2.0",
 )
 
+# 开发演示允许 Vite、本机局域网地址访问；生产部署时应改成明确域名白名单。
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -26,10 +27,12 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup():
+    # 启动时自动建表并补齐演示数据，保证老师本地拉取后可以直接运行。
     init_db()
     seed_database(reset=False)
 
 
+# 所有业务路由集中注册在这里，便于检查功能模块是否真正接入系统。
 app.include_router(dashboard.router)
 app.include_router(auth.router)
 app.include_router(profile.router)

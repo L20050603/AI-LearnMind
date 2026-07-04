@@ -31,6 +31,7 @@ def _active_payload(course_code: str):
 
 @router.get("")
 def get_courses(current_user: User = Depends(get_current_user)):
+    # 课程包列表既包括内置 Demo 主题，也包括用户自定义主题，前端据此渲染主题管理器。
     return list_course_packs()
 
 
@@ -41,6 +42,7 @@ def get_active_course(current_user: User = Depends(get_current_user)):
 
 @router.post("")
 def create_course(payload: CourseManageRequest, current_user: User = Depends(get_current_user)):
+    # 新增主题时只要求输入名称和知识点行文本，后端会自动生成图谱节点和默认前置关系。
     course = create_course_pack(payload.code, payload.name, payload.description, payload.point_names)
     return {
         "code": course["code"],
@@ -56,6 +58,7 @@ def create_course(payload: CourseManageRequest, current_user: User = Depends(get
 
 @router.patch("/active")
 def switch_active_course(payload: CourseSwitchRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 切换主题只改用户的 active_course_code，不删除历史数据，保证不同课程可并存演示。
     course_code = payload.course_code or payload.active_course_code
     if not get_course_pack(course_code):
         raise HTTPException(status_code=400, detail="不支持的学习主题")
@@ -87,6 +90,7 @@ def update_course(course_code: str, payload: CourseUpdateRequest, current_user: 
 
 @router.delete("/{course_code}")
 def delete_course(course_code: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 内置主题和正在使用的主题禁止删除，避免演示时误删核心课程包。
     if course_code in BUILTIN_COURSE_CODES:
         raise HTTPException(status_code=400, detail="内置学习主题不能删除")
     if course_code == current_user.active_course_code:

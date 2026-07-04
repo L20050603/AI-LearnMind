@@ -13,6 +13,7 @@ LEGAL_NOTICE = "结果来自配置的官方搜索 API，仅保存标题、链接
 
 class WebSearchProvider(SearchProvider):
     def __init__(self):
+        # 搜索供应商完全由环境变量控制；没有 Key 时自动使用本地资料库。
         self.provider = (os.getenv("SEARCH_PROVIDER") or os.getenv("SEARCH_API_PROVIDER") or "local").strip().lower()
         self.api_key = os.getenv("SEARCH_API_KEY", "").strip()
         self.base_url = os.getenv("SEARCH_API_BASE_URL", "").strip()
@@ -27,6 +28,7 @@ class WebSearchProvider(SearchProvider):
         return self.fallback.search(query, limit=limit, knowledge_point_id=knowledge_point_id)
 
     def search(self, query: str, limit: int = 5, knowledge_point_id=None) -> list[dict]:
+        # 只调用用户配置的官方搜索 API，不直接抓搜索引擎结果页。
         if self.provider == "local" or not self.api_key:
             return self._fallback(query, limit, knowledge_point_id)
         try:
@@ -79,6 +81,7 @@ class WebSearchProvider(SearchProvider):
         return data.get("webPages", {}).get("value", [])
 
     def _normalize_rows(self, rows, query: str, limit: int, knowledge_point_id=None):
+        # 不同搜索 API 的字段统一成系统内部 Resource 结构，便于前端复用同一套卡片。
         resources = []
         for row in (rows or [])[:limit]:
             url = row.get("url") or row.get("link") or row.get("displayUrl") or ""

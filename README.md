@@ -181,6 +181,25 @@ SEARCH_API_BASE_URL=
 - `POST /api/quiz/{quiz_id}/submit`
 - `GET /api/reports/innovation-summary`
 
+
+## 测试
+
+```bash
+cd backend
+pytest
+
+cd ../frontend
+npm run build
+```
+
+
+演示前检查：
+
+1. 后端启动后访问 `http://localhost:8000`。
+2. 前端启动后访问 `http://localhost:5173`。
+3. 登录 `demo / 123456`。
+4. 如果要展示大模型，先确认 `系统设置 -> AI Provider 状态` 为“大模型增强”。
+5. 如果只做离线演示，不需要任何 API Key。
 ## 提交作业说明
 
 建议提交源码、文档和配置示例，不提交本地运行生成物。
@@ -194,27 +213,9 @@ SEARCH_API_BASE_URL=
 
 不要提交：
 
-- `backend/.env`：包含真实 API Key。
+- `backend/.env`：包含真实 API Key，演示时本地保留即可。
 - `backend/venv/`：Python 虚拟环境。
 - `frontend/node_modules/`：前端依赖。
 - `frontend/dist/`：前端构建产物，可由 `npm run build` 重新生成。
 - `backend/learnmind.db`：本地 SQLite 数据库，可由 `python seed.py` 重新初始化。
 - `__pycache__/`、`.pytest_cache/`、`.npm-cache/`、`*.log`：缓存和日志。
-
-演示前检查：
-
-1. 后端启动后访问 `http://localhost:8000`。
-2. 前端启动后访问 `http://localhost:5173`。
-3. 登录 `demo / 123456`。
-4. 如果要展示大模型，先确认 `系统设置 -> AI Provider 状态` 为“大模型增强”。
-5. 如果只做离线演示，不需要任何 API Key。
-
-## 测试
-
-```bash
-cd backend
-pytest
-
-cd ../frontend
-npm run build
-```

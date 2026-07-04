@@ -18,6 +18,7 @@ def recommendation_strategy(point, mastery, prereq_details):
 
 
 def point_metrics(db, point_id: int, user_id: int | None = None):
+    # 掌握度不是固定模拟值，而是从学习记录、任务完成和未修复错题实时汇总。
     records_query = db.query(StudyRecord).filter(StudyRecord.knowledge_point_id == point_id)
     tasks_query = db.query(LearningTask).filter(LearningTask.knowledge_point_id == point_id)
     wrong_query = db.query(WrongQuestion).filter(WrongQuestion.knowledge_point_id == point_id)
@@ -48,6 +49,7 @@ def point_metrics(db, point_id: int, user_id: int | None = None):
 
 
 def calculate_point_mastery(db, point, user_id: int | None = None):
+    # 公式保留基础掌握度，同时让正确率、复习次数、任务完成率和错题修复产生影响。
     metrics = point_metrics(db, point["id"], user_id)
     base_mastery = 100 if point["id"] in {1, 101} else max(12, 72 - point["difficulty"] * 0.45)
     if metrics["review_count"] == 0 and metrics["task_count"] == 0 and metrics["open_wrong_count"] == 0:
@@ -75,6 +77,7 @@ def average_mastery(db, user_id: int | None = None, course_code: str | None = No
 
 
 def get_knowledge_nodes(db, user_id: int | None = None, course_code: str | None = None):
+    # 学习地图节点由当前课程包生成，切换主题后不会混入其他课程的知识点。
     scores = mastery_map(db, user_id, course_code)
     nodes = []
     for point in graph_points(course_code):

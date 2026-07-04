@@ -29,6 +29,7 @@ function modeLabel(mode) {
 }
 
 export default function ResourceHunter() {
+  // 资源猎手围绕全局 selectedLevel 与 activeCourse 工作，切换主题后默认检索新课程资料。
   const navigate = useNavigate();
   const { selectedLevel, setSelectedLevel, learningMap, refreshAll, dashboard, activeCourse } = useAppData();
   const { showToast } = useToast();
@@ -54,6 +55,7 @@ export default function ResourceHunter() {
   }
 
   async function runSearch() {
+    // 搜索接口后端会自动判断 local/web/crawl 模式，前端只负责展示统一资源卡片。
     setBusy("search");
     try {
       const result = await searchResources({
@@ -139,6 +141,7 @@ export default function ResourceHunter() {
   }
 
   async function handleCrawl(url) {
+    // URL 抓取只处理用户主动提供的公开网页，合规限制由后端 crawler 再次校验。
     setBusy("crawl");
     try {
       const resource = await crawlResource({ url, knowledgePointId: selectedLevel?.id });

@@ -27,6 +27,7 @@ function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
+      {/* 业务页面都放在受保护的 AppShell 内，页面切换时保留统一导航和动画。 */}
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/innovation-design" element={<InnovationDesignPage />} />
@@ -55,6 +56,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* 登录注册不需要进入 AppShell，避免未登录时加载业务数据。 */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route

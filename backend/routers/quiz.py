@@ -16,6 +16,7 @@ router = APIRouter(prefix="/api/quiz", tags=["quiz"])
 
 
 def quiz_payload(db: Session, quiz_id: int, user_id: int):
+    # 读取测验时不返回标准答案，防止前端答题前泄露答案。
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id, Quiz.user_id == user_id).first()
     if not quiz:
         raise HTTPException(status_code=404, detail="测验不存在或不属于当前用户")
@@ -76,6 +77,7 @@ def quiz_payload(db: Session, quiz_id: int, user_id: int):
 
 @router.post("/generate")
 def generate_quiz(payload: QuizGeneratePayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 生成测验会记录来源模式，便于前端展示“模型生成/本地题库兜底”。
     quiz, mode = create_quiz(db, payload.knowledgePointId, payload.sourceType, payload.sourceId, payload.count, user_id=current_user.id)
     log_event(
         db,
@@ -114,6 +116,7 @@ def get_quiz(quiz_id: int, db: Session = Depends(get_db), current_user: User = D
 
 @router.post("/{quiz_id}/submit")
 def submit_quiz(quiz_id: int, payload: QuizSubmitPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 提交后会写入学习记录、XP、掌握度和风险变化，打通测验闭环。
     result = grade_quiz(db, quiz_id, payload.answers, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="测验不存在或不属于当前用户")

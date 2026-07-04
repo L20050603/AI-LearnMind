@@ -8,6 +8,7 @@ from services.ai.openai_compatible_provider import OpenAICompatibleProvider
 
 class FallbackAIProvider(AIProvider):
     def __init__(self, primary: AIProvider, fallback: AIProvider):
+        # 真实大模型失败时自动降级到本地模板，保证演示过程不中断。
         self.primary = primary
         self.fallback = fallback
         self.provider_name = primary.provider_name
@@ -46,6 +47,7 @@ class FallbackAIProvider(AIProvider):
 
 
 def load_backend_env():
+    # 允许直接读取 backend/.env，方便课堂演示时不额外配置系统环境变量。
     env_path = Path(__file__).resolve().parents[2] / ".env"
     if not env_path.exists():
         return
@@ -74,6 +76,7 @@ def has_llm_key():
 
 
 def get_ai_provider():
+    # 有合法 Key 就启用兼容 OpenAI/Doubao 的 Provider，否则使用本地规则引擎。
     load_backend_env()
     local = LocalTemplateProvider()
     if has_llm_key():

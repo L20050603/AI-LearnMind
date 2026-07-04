@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/resources", tags=["resources"])
 
 
 def serialize_resource(resource: LearningResource):
+    # 统一前端资源卡片字段，隐藏数据库内部实现细节。
     return {
         "id": resource.id,
         "title": resource.title,
@@ -47,6 +48,7 @@ def serialize_resource(resource: LearningResource):
 
 
 def upsert_resource(db, item):
+    # 同一个 URL 只保留一条资源，避免多次搜索产生重复卡片。
     url = item.get("url", "")
     resource = db.query(LearningResource).filter(LearningResource.url == url).first() if url else None
     if not resource:
@@ -73,6 +75,7 @@ def upsert_resource(db, item):
 
 @router.post("/search")
 def search_resources(payload: ResourceSearchPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 搜索会优先使用配置的官方搜索 API，失败或无 Key 时自动回到本地资源库。
     active_pack = get_course_pack(current_user.active_course_code) or {}
     course_name = payload.course or active_pack.get("name", "")
     queries = build_resource_queries(payload.knowledgePointId, course_name, payload.goal, payload.resourceTypes, payload.query)
@@ -107,6 +110,7 @@ def search_resources(payload: ResourceSearchPayload, db: Session = Depends(get_d
 
 @router.post("/crawl")
 def crawl_resource(payload: ResourceCrawlPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # 用户指定 URL 会经过 crawler_service 的协议、关键词和 robots 合规检查。
     result = crawl_url(payload.url)
     db.add(ResourceCrawlLog(url=payload.url, status=result["status"], message=result["message"], http_status=result["http_status"], extracted_chars=len(result.get("excerpt", ""))))
     if not result["ok"]:

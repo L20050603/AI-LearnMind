@@ -6,11 +6,13 @@ import ReportWorkspace from "../components/ReportWorkspace.jsx";
 import PageContainer from "../layouts/PageContainer.jsx";
 
 export default function ReportPage() {
+  // 报告页同时服务周报展示和大作业创新设计素材整理。
   const { showToast } = useToast();
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
 
   async function generateInnovationSummary() {
+    // 创新设计素材由后端根据当前真实功能清单生成，方便写入课程报告。
     setBusy(true);
     try {
       const data = await getInnovationSummary();
